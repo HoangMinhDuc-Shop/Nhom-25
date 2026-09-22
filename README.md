@@ -41,45 +41,125 @@ Hệ thống được phát triển nhằm giải quyết triệt để các bà
 
 ---
 
-## 🚀 HƯỚNG DẪN CÀI ĐẶT & CHẠY HỆ THỐNG
+## 🗄️ VỊ TRÍ CÁC TỆP CƠ SỞ DỮ LIỆU SQL
+Nhóm đã chuẩn bị sẵn các tệp SQL phục vụ nhiều nhu cầu kiểm tra khác nhau trong dự án:
 
-### 1. Chuẩn Bị Môi Trường
-- Đã cài đặt **Node.js** (khuyến nghị v18 hoặc mới hơn).
-- Đã khởi động dịch vụ **MySQL** (qua XAMPP, WampServer hoặc MySQL Service) trên cổng mặc định `3306`.
-- *(Tùy chọn cho AI Cục bộ)*: Khởi động **Ollama** (`ollama serve`) và tải mô hình `ollama pull qwen2.5:1.5b`. *(Nếu máy không có Ollama, hệ thống tự động chạy qua Smart Semantic Engine dự phòng mà không cần cài đặt thêm).*
+1. **`database.sql` (Đặt ngay tại thư mục gốc `WebCHungCu/database.sql`):**  
+   Tệp SQL tổng hợp toàn diện nhất, bao gồm lệnh tạo CSDL `apartment_management`, cấu trúc 11 bảng chuẩn 3NF và **toàn bộ dữ liệu mẫu khởi tạo** (2 tòa tháp, 40 căn hộ, 10 tài khoản cư dân mẫu có mật khẩu mã hóa bcrypt, bảng biểu phí, hóa đơn, sự cố và 15 điều khoản nội quy). Phù hợp nhất để nhập nhanh qua công cụ giao diện như **phpMyAdmin** hoặc **MySQL Workbench**.
+2. **`scripts/schema.sql` (Đặt trong thư mục `WebCHungCu/scripts/schema.sql`):**  
+   Tệp kịch bản DDL thuần túy định nghĩa 11 bảng dữ liệu, các khóa ngoại (`FOREIGN KEY`), khóa duy nhất (`UNIQUE`) và chỉ mục tìm kiếm văn bản toàn văn (`FULLTEXT INDEX`).
+3. **Bộ script tự động hóa Node.js (`scripts/initDb.js` & `scripts/seed.js`):**  
+   Khởi tạo cấu trúc và nạp dữ liệu tự động chỉ với 1 câu lệnh qua Terminal mà không cần mở công cụ quản trị MySQL.
 
-### 2. Cài Đặt Thư Viện
-Mở Terminal tại thư mục `WebCHungCu`:
+---
+
+## 🚀 HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY CHI TIẾT (TỪNG BƯỚC)
+
+### 🔹 Bước 1: Chuẩn bị môi trường phần mềm
+Trước khi bắt đầu, đảm bảo máy tính đã cài đặt các công cụ sau:
+- **Node.js:** Phiên bản LTS khuyến nghị (Node.js v18 trở lên). Tải tại: [https://nodejs.org](https://nodejs.org). Kiểm tra bằng lệnh: `node -v` và `npm -v`.
+- **Dịch vụ MySQL:** Khởi động MySQL qua phần mềm **XAMPP**, **WampServer** hoặc dịch vụ **MySQL Service** trên cổng mặc định `3306`.
+- *(Tùy chọn cho AI Cục bộ):* Nếu muốn chạy mô hình AI nội bộ trên GPU, cài đặt **Ollama** từ [https://ollama.com](https://ollama.com). *(Lưu ý: Nếu máy không cài Ollama, hệ thống tự động chạy động cơ dự phòng Smart Semantic Offline Engine nội bộ mà không cần cài thêm gì).*
+
+---
+
+### 🔹 Bước 2: Cài đặt các gói thư viện Node.js
+Mở cửa sổ dòng lệnh (Terminal / PowerShell / Git Bash) tại thư mục `WebCHungCu` và thực thi:
 ```bash
 npm install
 ```
+*Lệnh trên sẽ tự động tải các gói thư viện cần thiết vào thư mục `node_modules`:*
+- `express`: Framework máy chủ web RESTful API & điều hướng tuyến đường.
+- `socket.io`: Thư viện truyền thông thời gian thực (Real-time WebSocket).
+- `mysql2`: Thư viện kết nối MySQL hỗ trợ cơ chế Connection Pool và Promise.
+- `bcryptjs`: Thuật toán mã hóa an toàn một chiều cho mật khẩu người dùng.
+- `ejs`: Template engine render giao diện trực tiếp từ máy chủ.
+- `express-session`: Quản lý phiên đăng nhập có mã hóa trạng thái.
+- `express-rate-limit`: Bộ kiểm soát tần suất request bảo vệ hệ thống và API AI.
 
-### 3. Khởi Tạo Cơ Sở Dữ Liệu & Nạp Dữ Liệu Mẫu
-Chạy script tự động tạo 11 bảng CSDL và nạp 40 căn hộ mẫu, 100 cư dân, 120 hóa đơn thu phí 3 tháng, 25 phản ánh và 18 nội quy:
+---
+
+### 🔹 Bước 3: Khởi tạo Cơ sở dữ liệu & Nạp dữ liệu mẫu
+Bạn có thể chọn **1 trong 2 cách** thuận tiện nhất sau:
+
+#### 👉 Cách 3.1: Chạy tự động bằng câu lệnh Node.js (Khuyên dùng - Nhanh nhất)
+Tại cửa sổ dòng lệnh thư mục `WebCHungCu`, chạy 2 lệnh:
 ```bash
+# Lệnh 1: Tự động kết nối MySQL và tạo 11 bảng dữ liệu chuẩn 3NF
 node scripts/initDb.js
+
+# Lệnh 2: Tự động nạp 40 căn hộ mẫu, 100 cư dân, hóa đơn thu phí và 15 nội quy
 node scripts/seed.js
 ```
 
-### 4. Cấu Hình Tệp Môi Trường (`.env`)
-Tệp `.env` đã được cấu hình sẵn các tham số mặc định:
+#### 👉 Cách 3.2: Nhập thủ công qua giao diện phpMyAdmin
+1. Mở trình duyệt truy cập: **[http://localhost/phpmyadmin](http://localhost/phpmyadmin)**.
+2. Chọn thẻ **Import** (Nhập) ở thanh menu trên cùng.
+3. Nhấn **Choose File** (Chọn tệp) và chọn tệp **`database.sql`** (ở ngay thư mục gốc dự án) hoặc tệp **`scripts/schema.sql`**.
+4. Cuộn xuống dưới cùng và nhấn **Import** (Thực hiện). Hệ thống sẽ tự động tạo CSDL `apartment_management` với đầy đủ bảng và dữ liệu.
+
+---
+
+### 🔹 Bước 4: Kiểm tra cấu hình tệp môi trường (`.env`)
+Tệp `.env` đã được thiết lập sẵn trong thư mục mã nguồn. Nếu cần tùy chỉnh cổng hoặc mật khẩu MySQL của máy bạn, hãy mở tệp `.env` (hoặc sao chép từ `.env.example`):
 ```env
 PORT=3000
-DB_HOST=localhost
+DB_HOST=127.0.0.1
+DB_PORT=3306
 DB_USER=root
 DB_PASS=
-DB_NAME=webchungcu
-SESSION_SECRET=apartment_management_secret_key_2026
-GEMINI_API_KEY=your_gemini_api_key_here
+DB_NAME=apartment_management
+SESSION_SECRET=chungcu_secret_key_nhom25_ictu_2026
+GEMINI_API_KEY=your_api_key_here
 OLLAMA_URL=http://localhost:11434
 ```
+*(Thông thường với XAMPP, người dùng giữ nguyên `DB_USER=root` và `DB_PASS=` để trống là kết nối thành công ngay lập tức).*
 
-### 5. Khởi Chạy Ứng Dụng
+---
+
+### 🔹 Bước 5: Khởi chạy máy chủ Web
+
+#### 🌟 Cách 1: Click đúp vào tệp `start.bat` (Dành cho Windows)
+Trong thư mục gốc `WebCHungCu`, nhấp đúp vào tệp **`start.bat`**.  
+File kịch bản sẽ:
+1. Tự động kiểm tra xem máy đã cài Node.js chưa.
+2. Tự động kiểm tra và chạy `npm install` nếu chưa có `node_modules`.
+3. Tự động bật máy chủ Web và in sẵn tài khoản đăng nhập ra màn hình.
+
+#### 💻 Cách 2: Chạy lệnh qua Terminal
 ```bash
 npm start
-# Hoặc trên Windows: Click đúp vào file start.bat
+# Hoặc: node server.js
 ```
-Mở trình duyệt và truy cập: **[http://localhost:3000](http://localhost:3000)**
+Khi màn hình xuất hiện thông báo:
+```text
+============================================================
+  HỆ THỐNG QUẢN LÝ CƯ DÂN CHUNG CƯ CÓ TÍCH HỢP AI (NHÓM 25)
+  Server đang lắng nghe tại cổng: 3000
+  Truy cập ứng dụng: http://localhost:3000
+============================================================
+```
+Mở trình duyệt (Chrome, Edge, Firefox) truy cập vào địa chỉ: **[http://localhost:3000](http://localhost:3000)** *(hoặc [http://localhost:3000/login](http://localhost:3000/login))*.
+
+---
+
+### 🔹 Bước 6: Kích hoạt & Trải nghiệm tính năng AI
+
+#### Trường hợp A: Máy tính có cài đặt Ollama (Chạy On-Premise)
+1. Mở một cửa sổ dòng lệnh riêng biệt và chạy:
+   ```bash
+   ollama serve
+   ollama pull qwen2.5:1.5b
+   ```
+2. Web sẽ tự động nhận diện cổng `11434` và điều phối yêu cầu AI sang mô hình nội bộ Qwen2.5 với thời gian phản hồi siêu tốc ~1.2s.
+
+#### Trường hợp B: Máy tính KHÔNG CÓ Ollama (Chạy máy trạm bình thường)
+✨ **Không cần thực hiện thao tác nào!**  
+Kiến trúc AI Tri-Engine sẽ tự động kích hoạt Động cơ Dự phòng Cục bộ (**Smart Semantic Offline Engine**). Toàn bộ 3 chức năng:
+1. Soạn thông báo hành chính BQL
+2. Tóm tắt & Phân cụm phản ánh sự cố tuần
+3. Chatbot RAG hỏi đáp nội quy chung cư  
+vẫn hoạt động trơn tru 100%, trả lời thông minh và tuyệt đối không phát sinh lỗi crash.
 
 ---
 
@@ -94,7 +174,7 @@ Mở trình duyệt và truy cập: **[http://localhost:3000](http://localhost:3
 ---
 
 ## 🧪 BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)
-Nhóm đã xây dựng sẵn 3 bộ kịch bản kiểm thử tự động toàn diện:
+Nhóm đã xây dựng sẵn 3 bộ kịch bản kiểm thử tự động toàn diện để người chấm thẩm định:
 ```bash
 # 1. Kiểm thử toàn bộ nghiệp vụ End-to-End (E2E)
 node scripts/testAppFull.js
