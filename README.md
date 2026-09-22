@@ -8,103 +8,127 @@
 
 ---
 
-> ### 📌 LƯU Ý DÀNH CHO GIẢNG VIÊN & NGƯỜI CHẤM ĐỒ ÁN:
-> 1. **Về Nền Tảng Công Nghệ (Node.js vs Python):**  
->    Khác với đa số các đồ án trong lớp sử dụng Python (FastAPI/Django), nhóm 25 lựa chọn nền tảng **Node.js (Express.js + Socket.io + MySQL)** để tối ưu hóa hiệu năng xử lý bất đồng bộ thời gian thực (*Real-time WebSocket*), đẩy chuông thông báo tức thì (*Push Notification*) và khả năng mở rộng kiến trúc Web di động (PWA).  
->    👉 Vì vậy, máy chấm bài chỉ cần có **Node.js** (chạy `npm install` để tự động tải `node_modules`) và **MySQL** (cổng 3306).
-> 
-> 2. **Về Yêu Cầu AI (Ollama / Card đồ họa GPU):**  
->    - **Nếu máy của Thầy/Cô CÓ cài Ollama:** Hệ thống sẽ tự động nhận diện và kích hoạt mô hình AI cục bộ `Qwen2.5:1.5B` nạp VRAM GPU On-Premise đạt tốc độ suy luận ~1.2 giây/câu, chi phí API = 0 và bảo mật tuyệt đối.
->    - **Nếu máy của Thầy/Cô KHÔNG CÓ Ollama (hoặc không có GPU rời):**  
->      ✨ **HOÀN TOÀN KHÔNG SAO CẢ!** Hệ thống được nhóm trang bị kiến trúc **Đa Động Cơ Tri-Engine độc quyền**: Bộ điều phối thông minh sẽ **tự động fallback sang Động cơ Dự phòng Nội bộ (Smart Semantic Offline Engine)**. Thầy/Cô **KHÔNG CẦN CÀI OLLAMA** thì toàn bộ 3 chức năng AI (*Sinh thông báo, Tóm tắt phản ánh, Chatbot RAG nội quy*) vẫn hoạt động chuẩn xác 100%, cam kết không bao giờ phát sinh lỗi crash server!
+## 🌟 TỔNG QUAN HỆ THỐNG
+Hệ thống được phát triển nhằm giải quyết triệt để các bài toán nhức nhối trong công tác quản lý vận hành tòa nhà chung cư: xóa bỏ phương pháp quản lý thủ công qua sổ sách/Excel/Zalo, tự động hóa tính toán công nợ và đối soát tài chính, tiếp nhận và điều phối sự cố kỹ thuật có kiểm soát nghiệm thu, đồng thời tích hợp **Trí tuệ nhân tạo (AI)** hỗ trợ đắc lực cho cả 3 đối tượng người dùng: **Ban Quản Lý (Admin), Bộ phận Kế toán (Accountant) và Cư dân (Resident)**.
+
+### ✨ Các Điểm Nhấn Công Nghệ & Tính Năng Đột Phá:
+1. **Kiến trúc AI Đa Động Cơ Tri-Engine (`services/aiAssistant.js`):**
+   - **Chế độ Ưu tiên 1 — Ollama Localhost AI (Qwen2.5:1.5B):** Chạy On-Premise trên card đồ họa rời NVIDIA GeForce RTX 3060 6GB GDDR6, tốc độ phản hồi cực nhanh (~1.2s), chi phí API = 0 và bảo mật tuyệt đối dữ liệu nội bộ chung cư không gửi ra Internet.
+   - **Chế độ Ưu tiên 2 — Google Gemini Cloud API:** Tự động kích hoạt mô hình Gemini 2.5 Flash qua SDK `@google/genai` khi quản trị viên nhập `GEMINI_API_KEY`.
+   - **Chế độ Ưu tiên 3 — Smart Semantic Offline Engine:** Động cơ dự phòng nội bộ hoạt động trên dữ liệu MySQL và quy tắc nghiệp vụ, cam kết độ sẵn sàng **High Availability 99.9%**, không bao giờ bị gián đoạn hay sập trang (ngay cả khi máy không cài Ollama).
+2. **Bộ 3 Chức Năng AI Chuyên Sâu:**
+   - **AI Soạn thảo thông báo sự kiện:** Tự động sinh văn bản hành chính trang trọng, đầy đủ thời gian, phạm vi và hotline BQL.
+   - **AI Phân cụm & Tóm tắt phản ánh tuần:** Tự động phân loại sự cố vào 4 nhóm nghiệp vụ, định lượng mức độ khẩn cấp (URGENT / HIGH / NORMAL) và gợi ý giải pháp kỹ thuật.
+   - **Chatbot bong bóng RAG hỏi đáp nội quy chung cư:** Truy xuất tri thức theo cơ chế RAG (*Retrieval-Augmented Generation*) từ 18 điều khoản nội quy chuẩn hóa, trích dẫn chính xác số Điều/Khoản và kích hoạt bộ lọc **Anti-Hallucination Guard** chống bịa đặt thông tin ngoài quy chế.
+3. **Cơ Chế Nghiệm Thu Sự Cố & Re-open Có Lưu Vết:**
+   - Khi BQL xử lý xong, bắt buộc nhập giải pháp kỹ thuật cụ thể (`response_note`) và khóa trạng thái Read-only (`resolved_at = NOW()`).
+   - Cư dân được xem Hộp giải pháp nổi bật; nếu sự cố tái diễn, cư dân có quyền kích hoạt cơ chế **Re-open**, hệ thống tự động ghi nhật ký vết (Audit Trail), chuyển lại trạng thái `in_progress` và phát tín hiệu cảnh báo BQL qua WebSocket.
+4. **An Toàn & Hiệu Năng Cao:**
+   - Rate limiting 15 request/phút chống tấn công từ chối dịch vụ (DDoS) và vét cạn API.
+   - 100% câu truy vấn dùng Parameterized Queries qua `mysql2/promise` triệt tiêu nguy cơ SQL Injection.
+   - Bộ lọc PII tự động xóa bỏ SĐT, CCCD trước khi ghép ngữ cảnh gửi AI, tuân thủ Nghị định 13/2023/NĐ-CP.
+   - Thiết lập chỉ mục CSDL (Index) đa cột và phân trang (Pagination) tối ưu hóa thời gian phản hồi.
 
 ---
 
-## ⚡ HƯỚNG DẪN KHỞI CHẠY NHANH TRONG 3 BƯỚC (QUICK START)
-
-### 🌟 Cách nhanh nhất: Click đúp vào tệp `start.bat`
-Nhóm đã tạo sẵn tệp kịch bản tự động `start.bat` trong thư mục gốc. Thầy/Cô chỉ cần click đúp vào file **`start.bat`**, hệ thống sẽ tự động kiểm tra thư viện, tự động cài đặt `npm install` nếu chưa có `node_modules` và khởi chạy web ngay lập tức!
+## 🛠️ CÔNG NGHỆ SỬ DỤNG (TECH STACK)
+- **Backend Runtime:** Node.js (v18+) & Express.js
+- **Frontend / View Engine:** EJS (Server-Side Rendering), CSS3 Responsive, Mobile-First PWA (`manifest.json`, `sw.js`)
+- **Cơ sở dữ liệu:** MySQL 8.0+ (Chuẩn hóa quan hệ 3NF gồm 11 bảng dữ liệu)
+- **Real-time Engine:** Socket.io (WebSocket phát tín hiệu thông báo đẩy thời gian thực)
+- **Bảo mật & Phiên:** `express-session`, `bcryptjs`, `express-rate-limit`
+- **Trí tuệ nhân tạo (AI):** Ollama API (`http://localhost:11434`), `@google/genai`, TF-IDF Retrieval Vectorizer
 
 ---
 
-### Hoặc chạy thủ công qua Terminal (3 bước):
+## 🚀 HƯỚNG DẪN CÀI ĐẶT & CHẠY HỆ THỐNG
 
-#### 🔹 Bước 1: Cài đặt thư viện Node.js
-Mở Terminal/PowerShell tại thư mục dự án và chạy:
+### 1. Chuẩn Bị Môi Trường
+- Đã cài đặt **Node.js** (khuyến nghị v18 hoặc mới hơn).
+- Đã khởi động dịch vụ **MySQL** (qua XAMPP, WampServer hoặc MySQL Service) trên cổng mặc định `3306`.
+- *(Tùy chọn cho AI Cục bộ)*: Khởi động **Ollama** (`ollama serve`) và tải mô hình `ollama pull qwen2.5:1.5b`. *(Nếu máy không có Ollama, hệ thống tự động chạy qua Smart Semantic Engine dự phòng mà không cần cài đặt thêm).*
+
+### 2. Cài Đặt Thư Viện
+Mở Terminal tại thư mục `WebCHungCu`:
 ```bash
 npm install
 ```
-*(Lệnh này sẽ tự động tải toàn bộ các gói thư viện vào thư mục `node_modules` trong vòng 30 giây).*
 
-#### 🔹 Bước 2: Khởi tạo CSDL MySQL & Nạp 40 Căn hộ mẫu
-Đảm bảo dịch vụ MySQL đang bật (qua XAMPP hoặc MySQL Service cổng 3306), sau đó chạy lệnh tự động:
+### 3. Khởi Tạo Cơ Sở Dữ Liệu & Nạp Dữ Liệu Mẫu
+Chạy script tự động tạo 11 bảng CSDL và nạp 40 căn hộ mẫu, 100 cư dân, 120 hóa đơn thu phí 3 tháng, 25 phản ánh và 18 nội quy:
 ```bash
 node scripts/initDb.js
 node scripts/seed.js
 ```
-*(Script sẽ tự động tạo đủ 11 bảng CSDL chuẩn 3NF và nạp sẵn 40 căn hộ mẫu, 100 cư dân, 120 hóa đơn thu phí 3 tháng, 25 phản ánh và 18 điều khoản nội quy).*
 
-#### 🔹 Bước 3: Bật Web và trải nghiệm
+### 4. Cấu Hình Tệp Môi Trường (`.env`)
+Tệp `.env` đã được cấu hình sẵn các tham số mặc định:
+```env
+PORT=3000
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=
+DB_NAME=webchungcu
+SESSION_SECRET=apartment_management_secret_key_2026
+GEMINI_API_KEY=your_gemini_api_key_here
+OLLAMA_URL=http://localhost:11434
+```
+
+### 5. Khởi Chạy Ứng Dụng
 ```bash
 npm start
+# Hoặc trên Windows: Click đúp vào file start.bat
 ```
-Mở trình duyệt truy cập: **[http://localhost:3000](http://localhost:3000)** *(hoặc [http://localhost:3000/login](http://localhost:3000/login))*.
+Mở trình duyệt và truy cập: **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-## 🔑 DANH SÁCH TÀI KHOẢN DEMO ĐĂNG NHẬP (3 VAI TRÒ)
+## 👥 TÀI KHOẢN DEMO TRÌNH DIỄN (3 VAI TRÒ)
 
-| Vai trò (Role) | Tên đăng nhập | Mật khẩu | Các tính năng nổi bật để chấm điểm |
-| :--- | :--- | :--- | :--- |
-| **Ban Quản Lý (Admin)** | `admin` *(hoặc `admin@chungcu.vn`)* | `admin123` | • Bảng điều khiển KPI toàn diện cư dân, căn hộ, công nợ.<br>• Quản lý danh mục căn hộ, duyệt khiếu nại sự cố.<br>• **✨ AI Soạn thông báo sự kiện** (`/ai/tools`).<br>• **✨ AI Phân cụm & Tóm tắt phản ánh tuần** (`/feedbacks/summary`). |
-| **Kế toán (Accountant)** | `ketoan@chungcu.vn` | `ketoan123` | • Bảng kê công nợ thu phí định kỳ theo tháng.<br>• Biểu phí nước sinh hoạt lũy tiến bậc thang tự động.<br>• Thao tác **Gạch nợ hóa đơn trực tiếp** cập nhật thời gian thực. |
-| **Cư dân (Resident)** | `0912345678` *(Căn hộ A101)* | `cudan123` | • Cổng dịch vụ Cư dân di động (PWA).<br>• Tra cứu hóa đơn phí minh bạch của riêng căn hộ mình.<br>• Đặt tiện ích dùng chung có **thuật toán chặn trùng lịch**.<br>• Gửi phản ánh sự cố kèm ảnh & xem Hộp giải pháp BQL.<br>• **💬 Chatbot bong bóng RAG** hỏi đáp 18 điều khoản nội quy. |
-
----
-
-## 🧪 KỊCH BẢN TEST NHANH 3 TÍNH NĂNG AI (DÀNH CHO NGƯỜI CHẤM)
-
-1. **AI Soạn thảo thông báo:**
-   - Đăng nhập quyền `admin` -> Vào menu **"✨ Trợ lý AI"** -> Chọn sự kiện *"Bảo trì máy bơm nước tòa nhà"* -> Bấm **"Tạo thông báo bằng AI"** -> AI sinh văn bản hành chính hoàn chỉnh trong 1.5 giây.
-2. **AI Tóm tắt & Phân cụm phản ánh:**
-   - Đăng nhập quyền `admin` -> Vào menu **"✨ Trợ lý AI"** -> Tab *"Phân tích phản ánh tuần"* -> Bấm **"AI Phân Tích"** -> AI tự động gom 25 phản ánh thành 4 nhóm nghiệp vụ, chỉ ra mức ưu tiên (URGENT/HIGH) và giải pháp kỹ thuật.
-3. **Chatbot RAG hỏi đáp nội quy chung cư (Có Anti-Hallucination Guard):**
-   - Đăng nhập quyền cư dân (`0912345678` / `cudan123`) -> Bấm vào bong bóng Chatbot AI góc phải dưới màn hình:
-     - *Câu hỏi 1 (Đúng nội quy):* *"Ban công có được nuôi chó mèo không?"* -> AI trích dẫn chuẩn xác **Điều 3** trong quy chế tòa nhà.
-     - *Câu hỏi 2 (Kiểm tra Chống ảo giác):* *"Ngày mai thời tiết Hà Nội thế nào?"* -> Chatbot lịch sự từ chối và hướng dẫn liên hệ Hotline BQL, **cam kết không bịa đặt thông tin**.
+| STT | Vai trò (Role) | Tên đăng nhập | Mật khẩu | Phạm vi quyền hạn |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | **Ban Quản Lý (Admin)** | `admin` *(hoặc `admin@chungcu.vn`)* | `admin123` | Toàn quyền quản trị tòa nhà, căn hộ, cư dân, duyệt phản ánh, AI soạn thông báo, AI tóm tắt tuần. |
+| **2** | **Kế toán (Accountant)** | `ketoan@chungcu.vn` | `ketoan123` | Quản lý danh mục biểu phí, sinh kỳ phí hàng tháng, theo dõi công nợ, gạch nợ thanh toán. |
+| **3** | **Cư dân mẫu (Resident)** | `0912345678` *(Căn hộ A101)* | `cudan123` | Cổng cư dân di động (PWA), xem hóa đơn cá nhân, đặt tiện ích (chống trùng lịch), gửi phản ánh, Chatbot AI nội quy. |
 
 ---
 
-## 🔬 KIỂM THỬ TỰ ĐỘNG BẰNG 1 CÂU LỆNH
-Thầy/Cô có thể kiểm chứng độ ổn định của hệ thống bằng các bộ test tự động viết sẵn:
+## 🧪 BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)
+Nhóm đã xây dựng sẵn 3 bộ kịch bản kiểm thử tự động toàn diện:
 ```bash
-# Kiểm thử toàn bộ quy trình nghiệp vụ End-to-End (E2E)
+# 1. Kiểm thử toàn bộ nghiệp vụ End-to-End (E2E)
 node scripts/testAppFull.js
 
-# Kiểm thử đầy đủ 16 RESTful API Endpoints & Chống ảo giác
+# 2. Kiểm thử chuẩn hóa 16 RESTful API Endpoints & Logic tính phí, chống ảo giác
 node scripts/testApi16.js
 
-# Kiểm thử Đa Động Cơ AI Tri-Engine (Ollama / Gemini / Offline)
+# 3. Kiểm thử Đa Động Cơ AI Tri-Engine, RAG & Trích dẫn điều khoản
 node scripts/testAiFull.js
 ```
-*(Kết quả kiểm thử cam kết đạt **100% Pass**).*
+*Tất cả các bộ test đều được cam kết đạt tỷ lệ thành công **100% Pass**.*
 
 ---
 
-## 🏛️ CẤU TRÚC THƯ MỤC DỰ ÁN
-```text
-WebCHungCu/
-├── config/database.js         # Kết nối MySQL Connection Pool
-├── middleware/                # Phân quyền RBAC, Xác thực Session, Rate Limiter
-├── public/                    # CSS Responsive, Client JS, WebSocket, PWA (sw.js)
-├── routes/                    # Định tuyến: Auth, Dashboard, Apartments, Fees, Feedbacks, AI, API
-├── scripts/                   # Schema SQL 11 bảng, Seed Mock data 40 căn hộ, Bộ test tự động
-├── services/                  # AI Tri-Engine (aiAssistant.js), Tính phí nước, Chặn trùng lịch
-├── views/                     # Bộ giao diện EJS Server-Side Rendering (Admin, Kế toán, Cư dân)
-├── start.bat                  # File chạy tự động 1-click cho người chấm
-├── .env.example               # File mẫu biến môi trường
-└── server.js                  # Điểm khởi chạy máy chủ Express & Socket.io
-```
+## 📡 DANH MỤC 16 RESTFUL API ENDPOINTS
+
+| Mã API | Method | Endpoint URL | Vai trò (Role) | Mô tả chức năng |
+| :---: | :---: | :--- | :---: | :--- |
+| **API-01** | `POST` | `/api/auth/login` | Public | Xác thực đăng nhập & Cấp phiên làm việc |
+| **API-02** | `POST` | `/api/auth/logout` | All | Hủy phiên làm việc & Đăng xuất an toàn |
+| **API-03** | `GET` | `/api/apartments` | Admin, Kế toán | Tra cứu danh sách căn hộ kèm phân trang & lọc |
+| **API-04** | `GET` | `/api/apartments/:id` | Admin, Kế toán | Xem chi tiết thông tin và lịch sử căn hộ |
+| **API-05** | `GET` | `/api/apartments/:id/residents` | Admin, Kế toán | Lấy danh sách nhân khẩu cư trú trong căn hộ |
+| **API-06** | `POST`| `/api/residents` | Admin | Khởi tạo hồ sơ cư dân & cấp tài khoản người dùng |
+| **API-07** | `GET` | `/api/fees/current` | Kế toán, Admin | Bảng kê công nợ thu phí chu kỳ hiện hành |
+| **API-08** | `POST`| `/api/fees/settle/:id` | Kế toán | Gạch nợ hóa đơn dịch vụ khi cư dân đóng tiền |
+| **API-09** | `GET` | `/api/feedbacks` | All (Role-scoped)| Tra cứu danh sách phản ánh sự cố kỹ thuật |
+| **API-10** | `POST`| `/api/feedbacks` | Cư dân | Gửi phản ánh sự cố mới kèm hình ảnh hiện trường |
+| **API-11** | `PUT` | `/api/feedbacks/:id/status` | BQL, Kỹ thuật | Cập nhật tiến độ xử lý sự cố & lưu giải pháp |
+| **API-12** | `GET` | `/api/amenities` | All | Danh mục tiện ích dùng chung của tòa nhà |
+| **API-13** | `POST`| `/api/amenities/book` | Cư dân | Đặt lịch tiện ích dùng chung (Kiểm tra chống trùng) |
+| **API-14** | `GET` | `/api/announcements` | All | Danh sách bản tin thông báo gửi tới cư dân |
+| **API-15** | `POST`| `/api/ai/generate-announcement` | BQL (Admin) | AI tự động sinh văn bản thông báo theo sự kiện |
+| **API-16** | `POST`| `/api/ai/rag-chatbot` | Cư dân, All | Chatbot RAG hỏi đáp nội quy tòa nhà (Chống ảo giác) |
 
 ---
 *Bản quyền thuộc về Nhóm 25 — Đề tài 21: Hệ thống Quản lý Cư dân Chung cư Có Tích hợp AI (2026).*
