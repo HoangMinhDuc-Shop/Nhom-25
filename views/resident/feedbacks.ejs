@@ -1,0 +1,158 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📝 Gửi Ý Kiến & Phản Ánh Cư Dân</h1>
+      <p class="page-subtitle">Ban Quản Lý luôn lắng nghe để nâng cao chất lượng cuộc sống cho cộng đồng</p>
+    </div>
+    <a href="/resident/home" class="btn btn-outline">⬅️ Về Trang Chủ</a>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <div class="grid-2">
+    <!-- FORM GỬI PHẢN ÁNH MỚI -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">✍️ Gửi Phản Ánh Mới</h3>
+      </div>
+      <form action="/feedbacks/create" method="POST">
+        <div class="form-group">
+          <label>Danh mục vấn đề</label>
+          <select name="category" required>
+            <option value="Tiếng ồn">Tiếng ồn (Khoan đục, ca hát sau 22h...)</option>
+            <option value="Vệ sinh">Vệ sinh & Rác thải hành lang</option>
+            <option value="Kỹ thuật">Kỹ thuật & Cơ sở vật chất (Thang máy, đèn...)</option>
+            <option value="An ninh">An ninh & Bảo vệ (Người lạ, trộm cắp...)</option>
+            <option value="Dịch vụ">Thái độ phục vụ / Dịch vụ tiện ích</option>
+            <option value="Khác">Ý kiến đóng góp khác</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tiêu đề ngắn gọn</label>
+          <input type="text" name="title" required placeholder="VD: Thang máy số 2 tháp A bị rung lắc mạnh...">
+        </div>
+
+        <div class="form-group">
+          <label>Nội dung chi tiết (Mô tả vị trí, thời gian xảy ra)</label>
+          <textarea name="content" rows="6" required placeholder="Mô tả cụ thể để Ban Quản Lý và đội ngũ kỹ thuật có thể xác minh và xử lý nhanh chóng nhất..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Gửi Ý Kiến Tới Ban Quản Lý 🚀
+        </button>
+      </form>
+    </div>
+
+    <!-- LỊCH SỬ PHẢN ÁNH ĐÃ GỬI -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📋 Nhật Ký Phản Ánh Của Bạn (<%= feedbacks.length %>)</h3>
+      </div>
+
+      <% if (feedbacks.length === 0) { %>
+        <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+          Bạn chưa gửi ý kiến hoặc phản ánh nào.
+        </p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; max-height: 520px; overflow-y: auto;">
+          <% feedbacks.forEach(f => { %>
+            <div style="padding: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <div>
+                  <span class="badge badge-primary"><%= f.category %></span>
+                  <h4 style="font-size: 0.95rem; font-weight: 700; margin-top: 0.25rem;"><%= f.title %></h4>
+                </div>
+                <span class="badge <%= f.status === 'resolved' ? 'badge-success' : (f.status === 'in_progress' ? 'badge-info' : 'badge-warning') %>">
+                  <%= f.status === 'resolved' ? 'Đã xử lý' : (f.status === 'in_progress' ? 'Đang xử lý' : 'Chờ tiếp nhận') %>
+                </span>
+              </div>
+
+              <p style="font-size: 0.85rem; color: #475569; background: #F8FAFC; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                <%= f.content %>
+              </p>
+
+              <% if (f.status === 'resolved') { %>
+                <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-left: 4px solid #16A34A; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.25rem;">
+                    <strong style="color: #166534; font-size: 0.88rem; display: flex; align-items: center; gap: 0.3rem;">
+                      <span>🛠️</span> Giải pháp Ban Quản Lý đã thực hiện:
+                    </strong>
+                    <% if (f.resolved_at) { %>
+                      <span style="font-size: 0.72rem; color: #15803D; background: #DCFCE7; padding: 0.15rem 0.45rem; border-radius: 9999px; font-weight: 600;">
+                        ✓ Xong lúc: <%= new Date(f.resolved_at).toLocaleString('vi-VN') %>
+                      </span>
+                    <% } %>
+                  </div>
+                  <div style="font-size: 0.85rem; color: #14532D; line-height: 1.5; white-space: pre-line;">
+                    <%= f.response_note || '✓ Đội ngũ kỹ thuật tòa nhà đã kiểm tra trực tiếp hiện trường và xử lý dứt điểm theo quy trình vận hành.' %>
+                  </div>
+                </div>
+              <% } else if (f.response_note) { %>
+                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-left: 4px solid #3B82F6; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                  <div style="margin-bottom: 0.25rem;">
+                    <strong style="color: #1E40AF; font-size: 0.88rem;">💬 Thông tin xử lý từ Ban Quản Lý:</strong>
+                  </div>
+                  <div style="font-size: 0.85rem; color: #1E3A8A; line-height: 1.5; white-space: pre-line;">
+                    <%= f.response_note %>
+                  </div>
+                </div>
+              <% } %>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px dashed #E2E8F0; padding-top: 0.4rem;">
+                <div>Gửi lúc: <%= new Date(f.created_at).toLocaleString('vi-VN') %></div>
+                <% if (f.status === 'resolved') { %>
+                  <button class="btn btn-sm" style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-size: 0.75rem; padding: 0.25rem 0.6rem; font-weight: 600;" onclick="openResidentReopenModal('<%= f.id %>', `<%= (f.title || '').replace(/`/g, '\\`') %>`)">
+                    Sự cố chưa xong? Yêu cầu mở lại 🔄
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CƯ DÂN YÊU CẦU MỞ LẠI -->
+<div id="residentReopenModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: #B45309;">🔄 Yêu Cầu Mở Lại Phản Ánh</h3>
+      <button class="close-modal" onclick="closeModal('residentReopenModal')">&times;</button>
+    </div>
+    <form id="residentReopenForm" method="POST">
+      <p style="font-size: 0.9rem; color: #475569; margin-bottom: 0.75rem;">
+        Phản ánh: <strong id="resReopenTitle"></strong><br>
+        <span style="color: #64748B; font-size: 0.85rem;">Nếu sự cố tái diễn hoặc chưa được khắc phục triệt để, bạn vui lòng mô tả chi tiết để Ban Quản Lý cử kỹ thuật xử lý lại.</span>
+      </p>
+      <div class="form-group">
+        <label>Lý do yêu cầu kiểm tra lại <span style="color: red;">*</span></label>
+        <textarea name="reason" rows="3" required placeholder="VD: Vòi nước vẫn bị nhỏ giọt sau khi kỹ thuật về, bóng đèn tầng 8 lại bị chập..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; background: #D97706; border-color: #D97706;">Gửi Yêu Cầu Mở Lại Tới BQL</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openResidentReopenModal(id, title) {
+    document.getElementById('resReopenTitle').innerText = title;
+    document.getElementById('residentReopenForm').action = '/feedbacks/' + id + '/resident-reopen';
+    document.getElementById('residentReopenModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

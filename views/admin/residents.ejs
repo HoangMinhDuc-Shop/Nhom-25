@@ -1,0 +1,304 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">👥 Quản Lý Hồ Sơ Cư Dân & Phân Quyền</h1>
+      <p class="page-subtitle">Quản lý định danh cư dân, liên kết căn hộ và phân quyền truy cập hệ thống</p>
+    </div>
+    <% if (user.role === 'admin') { %>
+      <button class="btn btn-primary" onclick="openAddResModal()">+ Đăng Ký Cư Dân Mới</button>
+    <% } %>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- STATS -->
+  <div class="grid-3">
+    <div class="card stat-card">
+      <div class="stat-icon blue">👥</div>
+      <div class="stat-info">
+        <h3><%= stats.totalResidents %></h3>
+        <p>Tổng tài khoản người dùng</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green">🔑</div>
+      <div class="stat-info">
+        <h3><%= stats.ownersCount %></h3>
+        <p>Chủ sở hữu căn hộ</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon purple">🏠</div>
+      <div class="stat-info">
+        <h3><%= stats.tenantsCount %></h3>
+        <p>Thành viên gia đình & Khách thuê</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <form action="/residents" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+      <div style="flex: 1; min-width: 200px;">
+        <label>Tìm kiếm (Họ tên, SĐT, Email, Căn hộ)</label>
+        <input type="text" name="keyword" value="<%= filters.keyword || '' %>" placeholder="Nhập từ khóa...">
+      </div>
+
+      <div style="width: 160px;">
+        <label>Vai trò</label>
+        <select name="role">
+          <option value="">-- Tất cả vai trò --</option>
+          <option value="resident" <%= filters.role === 'resident' ? 'selected' : '' %>>Cư dân</option>
+          <option value="accountant" <%= filters.role === 'accountant' ? 'selected' : '' %>>Kế toán</option>
+          <option value="admin" <%= filters.role === 'admin' ? 'selected' : '' %>>Quản trị viên</option>
+        </select>
+      </div>
+
+      <div style="width: 160px;">
+        <label>Trạng thái</label>
+        <select name="status">
+          <option value="">-- Tất cả --</option>
+          <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Hoạt động</option>
+          <option value="inactive" <%= filters.status === 'inactive' ? 'selected' : '' %>>Đã khóa</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Tìm Kiếm</button>
+      <a href="/residents" class="btn btn-outline">Bỏ Lọc</a>
+    </form>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Họ và Tên</th>
+          <th>Số Điện Thoại</th>
+          <th>Email</th>
+          <th>Căn Hộ</th>
+          <th>Vai Trò</th>
+          <th>Quan Hệ Căn Hộ</th>
+          <th>CCCD / CMND</th>
+          <th>Trạng Thái</th>
+          <% if (user.role === 'admin') { %><th>Thao Tác</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (residents.length === 0) { %>
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Không tìm thấy cư dân nào.</td>
+          </tr>
+        <% } else { %>
+          <% residents.forEach(r => { %>
+            <tr>
+              <td><strong style="color: var(--primary);"><%= r.full_name %></strong></td>
+              <td><%= r.phone %></td>
+              <td><%= r.email || '-' %></td>
+              <td>
+                <% if (r.apartment_number) { %>
+                  <span class="badge badge-primary"><%= r.apartment_number %></span>
+                <% } else { %>
+                  <span style="color: var(--text-muted); font-size: 0.8rem;">BQL/Văn phòng</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (r.role === 'admin') { %>
+                  <span class="badge badge-danger">Quản Trị</span>
+                <% } else if (r.role === 'accountant') { %>
+                  <span class="badge badge-warning">Kế Toán</span>
+                <% } else { %>
+                  <span class="badge badge-info">Cư Dân</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (r.is_owner === 1) { %>
+                  <span class="badge badge-success">Chủ hộ</span>
+                <% } else if (r.role === 'resident') { %>
+                  <span class="badge badge-secondary">Thành viên/Thuê</span>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td><%= r.identity_card || '-' %></td>
+              <td>
+                <% if (r.status === 'active') { %>
+                  <span class="badge badge-success">Hoạt động</span>
+                <% } else { %>
+                  <span class="badge badge-danger">Khóa</span>
+                <% } %>
+              </td>
+              <% if (user.role === 'admin') { %>
+                <td>
+                  <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-sm btn-outline" onclick="openEditResModal('<%= r.id %>', '<%= r.full_name %>', '<%= r.phone %>', '<%= r.email || '' %>', '<%= r.apartment_id || '' %>', '<%= r.is_owner %>', '<%= r.role %>', '<%= r.status %>')">
+                      Sửa
+                    </button>
+                    <form action="/residents/<%= r.id %>/reset-password" method="POST" onsubmit="return confirm('Đặt lại mật khẩu cư dân <%= r.full_name %> về cudan123?')">
+                      <button type="submit" class="btn btn-sm btn-outline" title="Reset về mật khẩu cudan123">🔑 Reset</button>
+                    </form>
+                  </div>
+                </td>
+              <% } %>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL THÊM CƯ DÂN -->
+<div id="addResModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">+ Đăng Ký Cư Dân & Cấp Tài Khoản</h3>
+      <button class="close-modal" onclick="closeModal('addResModal')">&times;</button>
+    </div>
+    <form action="/residents/add" method="POST">
+      <div class="form-group">
+        <label>Họ và tên</label>
+        <input type="text" name="full_name" required placeholder="Nguyễn Văn A">
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Số điện thoại (Dùng đăng nhập)</label>
+          <input type="text" name="phone" required placeholder="09xxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="example@gmail.com">
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Căn hộ chỉ định</label>
+          <select name="apartment_id">
+            <option value="">-- Không gắn căn hộ --</option>
+            <% apartments.forEach(a => { %>
+              <option value="<%= a.id %>"><%= a.apartment_number %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Là Chủ hộ?</label>
+          <select name="is_owner">
+            <option value="1">Đúng (Chủ sở hữu)</option>
+            <option value="0">Không (Người thuê / Con cái)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Số CCCD / CMND</label>
+          <input type="text" name="identity_card" placeholder="00109xxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Vai trò</label>
+          <select name="role">
+            <option value="resident">Cư dân</option>
+            <option value="accountant">Kế toán</option>
+            <option value="admin">Ban Quản Lý (Admin)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu khởi tạo</label>
+        <input type="text" name="password" value="cudan123" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Đăng Ký Tài Khoản</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL SỬA CƯ DÂN -->
+<div id="editResModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">Cập Nhật Thông Tin Cư Dân</h3>
+      <button class="close-modal" onclick="closeModal('editResModal')">&times;</button>
+    </div>
+    <form id="editResForm" method="POST">
+      <div class="form-group">
+        <label>Họ và tên</label>
+        <input type="text" id="editFullName" name="full_name" required>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Số điện thoại</label>
+          <input type="text" id="editPhone" name="phone" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="editEmail" name="email">
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Căn hộ</label>
+          <select id="editApartmentId" name="apartment_id">
+            <option value="">-- Không gắn --</option>
+            <% apartments.forEach(a => { %>
+              <option value="<%= a.id %>"><%= a.apartment_number %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Chủ hộ</label>
+          <select id="editIsOwner" name="is_owner">
+            <option value="1">Chủ hộ</option>
+            <option value="0">Thành viên / Thuê</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Vai trò</label>
+          <select id="editRole" name="role">
+            <option value="resident">Cư dân</option>
+            <option value="accountant">Kế toán</option>
+            <option value="admin">Quản trị viên</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select id="editStatus" name="status">
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Đã khóa</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Lưu Thay Đổi</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openAddResModal() {
+    document.getElementById('addResModal').classList.add('active');
+  }
+  function openEditResModal(id, name, phone, email, aptId, isOwner, role, status) {
+    document.getElementById('editFullName').value = name;
+    document.getElementById('editPhone').value = phone;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editApartmentId').value = aptId;
+    document.getElementById('editIsOwner').value = isOwner;
+    document.getElementById('editRole').value = role;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editResForm').action = '/residents/' + id + '/update';
+    document.getElementById('editResModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

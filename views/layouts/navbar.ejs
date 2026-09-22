@@ -1,0 +1,96 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="nav-header">
+      <a href="/" class="nav-brand">
+        🏢 SmartBuilding <span class="logo-badge">AI Powered</span>
+      </a>
+
+      <% if (user) { %>
+        <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="Mở menu" aria-expanded="false">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      <% } %>
+    </div>
+
+    <% if (user) { %>
+      <div class="nav-menu" id="navMenu">
+        <ul class="nav-links">
+          <% if (user.role === 'admin') { %>
+            <li><a href="/admin/dashboard" class="<%= currentPath === '/admin/dashboard' ? 'active' : '' %>">📊 Tổng quan</a></li>
+            <li><a href="/apartments" class="<%= currentPath.startsWith('/apartments') ? 'active' : '' %>">🏠 Căn hộ</a></li>
+            <li><a href="/residents" class="<%= currentPath.startsWith('/residents') ? 'active' : '' %>">👥 Cư dân</a></li>
+            <li><a href="/fees" class="<%= currentPath === '/fees' ? 'active' : '' %>">💵 Thu phí</a></li>
+            <li><a href="/feedbacks" class="<%= currentPath.startsWith('/feedbacks') ? 'active' : '' %>">💬 Phản ánh</a></li>
+            <li><a href="/amenities" class="<%= currentPath.startsWith('/amenities') ? 'active' : '' %>">🏊 Tiện ích</a></li>
+            <li><a href="/announcements" class="<%= currentPath.startsWith('/announcements') ? 'active' : '' %>">📢 Thông báo</a></li>
+            <li><a href="/ai/tools" class="<%= currentPath.startsWith('/ai') ? 'active' : '' %>" style="background: rgba(212, 175, 55, 0.2); border: 1px solid var(--accent); color: #fff;">✨ Trợ lý AI</a></li>
+            <li><a href="/rules" class="<%= currentPath === '/rules' ? 'active' : '' %>">📖 Nội quy</a></li>
+          <% } else if (user.role === 'accountant') { %>
+            <li><a href="/accountant/dashboard" class="<%= currentPath === '/accountant/dashboard' ? 'active' : '' %>">📊 Tổng quan TC</a></li>
+            <li><a href="/fees" class="<%= currentPath === '/fees' ? 'active' : '' %>">💵 Quản lý Phí</a></li>
+            <li><a href="/fees/types" class="<%= currentPath === '/fees/types' ? 'active' : '' %>">📑 Biểu phí</a></li>
+            <li><a href="/apartments" class="<%= currentPath.startsWith('/apartments') ? 'active' : '' %>">🏠 Căn hộ</a></li>
+            <li><a href="/residents" class="<%= currentPath.startsWith('/residents') ? 'active' : '' %>">👥 Cư dân</a></li>
+            <li><a href="/announcements" class="<%= currentPath.startsWith('/announcements') ? 'active' : '' %>">📢 Bảng tin</a></li>
+            <li><a href="/rules" class="<%= currentPath === '/rules' ? 'active' : '' %>">📖 Nội quy</a></li>
+          <% } else { %>
+            <li><a href="/resident/home" class="<%= currentPath === '/resident/home' ? 'active' : '' %>">🏠 Cổng Cư Dân</a></li>
+            <li><a href="/fees" class="<%= currentPath === '/fees' ? 'active' : '' %>">💳 Hóa đơn Phí</a></li>
+            <li><a href="/amenities" class="<%= currentPath === '/amenities' ? 'active' : '' %>">🏊 Tiện ích</a></li>
+            <li><a href="/feedbacks" class="<%= currentPath.startsWith('/feedbacks') ? 'active' : '' %>">📝 Gửi Ý Kiến</a></li>
+            <li><a href="/announcements" class="<%= currentPath.startsWith('/announcements') ? 'active' : '' %>">📢 Thông Báo</a></li>
+            <li><a href="/rules" class="<%= currentPath === '/rules' ? 'active' : '' %>">📖 Tra cứu Nội quy</a></li>
+          <% } %>
+        </ul>
+
+        <div class="nav-user">
+          <div class="user-badge">
+            <span>👤 <strong><%= user.full_name %></strong></span>
+            <% if (user.apartment_number) { %>
+              <span style="font-size: 0.75rem; opacity: 0.85;">(P.<%= user.apartment_number %>)</span>
+            <% } %>
+            <span class="role-tag">
+              <%= user.role === 'admin' ? 'Quản Trị' : (user.role === 'accountant' ? 'Kế Toán' : 'Cư Dân') %>
+            </span>
+          </div>
+
+          <a href="/auth/logout" class="btn btn-sm btn-outline nav-logout-btn" style="color: #fff; border-color: rgba(255,255,255,0.3);" title="Đăng xuất">
+            Đăng xuất 🚪
+          </a>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="nav-user">
+        <a href="/auth/login" class="btn btn-sm btn-accent">Đăng nhập</a>
+      </div>
+    <% } %>
+  </div>
+</nav>
+
+<script>
+  function toggleMobileNav() {
+    const menu = document.getElementById('navMenu');
+    const toggle = document.getElementById('navToggle');
+    if (menu && toggle) {
+      const isOpen = menu.classList.toggle('active');
+      toggle.classList.toggle('active');
+      toggle.setAttribute('aria-expanded', isOpen);
+    }
+  }
+
+  // Đóng menu khi click bên ngoài trên mobile
+  document.addEventListener('click', function(e) {
+    const navbar = document.querySelector('.navbar');
+    const menu = document.getElementById('navMenu');
+    const toggle = document.getElementById('navToggle');
+    if (menu && menu.classList.contains('active') && navbar && !navbar.contains(e.target)) {
+      menu.classList.remove('active');
+      if (toggle) {
+        toggle.classList.remove('active');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
+</script>

@@ -1,0 +1,151 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <!-- WELCOME BANNER -->
+  <div style="background: linear-gradient(135deg, #1F4E79 0%, #2D6CA4 100%); color: #fff; border-radius: var(--radius); padding: 1.75rem 2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: var(--shadow);">
+    <div>
+      <span class="badge" style="background: rgba(212, 175, 55, 0.3); color: #FFFDF5; border: 1px solid var(--accent); margin-bottom: 0.5rem;">Cổng Dịch Vụ Cư Dân</span>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem;">
+        Xin chào, <%= user.full_name %>! 👋
+      </h1>
+      <p style="font-size: 0.95rem; opacity: 0.9;">
+        <% if (user.apartment_number) { %>
+          Căn hộ <strong><%= user.apartment_number %></strong> • <%= user.building_name || 'Tòa nhà A' %>
+        <% } else { %>
+          Chào mừng bạn đến với Cổng thông tin Cư dân
+        <% } %>
+      </p>
+    </div>
+
+    <!-- Quick Call BQL -->
+    <div style="text-align: right; background: rgba(255,255,255,0.12); padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.2);">
+      <div style="font-size: 0.75rem; opacity: 0.85;">Hotline Ban Quản Lý (24/7)</div>
+      <div style="font-size: 1.25rem; font-weight: 800; color: #FDE047;">📞 1900 8888</div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTION CARDS -->
+  <div class="grid-4" style="margin-bottom: 2rem;">
+    <a href="/fees" class="card stat-card" style="text-decoration: none; cursor: pointer; border-left: 4px solid var(--primary);">
+      <div class="stat-icon <%= myUnpaidTotal > 0 ? 'red' : 'green' %>">💳</div>
+      <div class="stat-info">
+        <h3 style="font-size: 1.25rem; color: var(--text-main);">
+          <%= myUnpaidTotal > 0 ? Number(myUnpaidTotal).toLocaleString('vi-VN') + ' đ' : 'Đã tất toán' %>
+        </h3>
+        <p><%= myUnpaidTotal > 0 ? 'Phí dịch vụ chưa đóng' : 'Không có công nợ' %></p>
+      </div>
+    </a>
+
+    <a href="/amenities" class="card stat-card" style="text-decoration: none; cursor: pointer; border-left: 4px solid var(--accent);">
+      <div class="stat-icon blue">🏊</div>
+      <div class="stat-info">
+        <h3 style="font-size: 1.25rem; color: var(--text-main);">Tiện Ích</h3>
+        <p>Đặt Hồ bơi, Sân Tennis, BBQ</p>
+      </div>
+    </a>
+
+    <a href="/feedbacks" class="card stat-card" style="text-decoration: none; cursor: pointer; border-left: 4px solid var(--info);">
+      <div class="stat-icon purple">📝</div>
+      <div class="stat-info">
+        <h3 style="font-size: 1.25rem; color: var(--text-main);">Gửi Ý Kiến</h3>
+        <p>Phản ánh sự cố & khiếu nại</p>
+      </div>
+    </a>
+
+    <a href="/rules" class="card stat-card" style="text-decoration: none; cursor: pointer; border-left: 4px solid var(--success);">
+      <div class="stat-icon green">📖</div>
+      <div class="stat-info">
+        <h3 style="font-size: 1.25rem; color: var(--text-main);">Nội Quy</h3>
+        <p>Tra cứu & Hỏi đáp Trợ lý AI</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="grid-2">
+    <!-- BẢNG TIN THÔNG BÁO TỪ BQL -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📢 Thông Báo Từ Ban Quản Lý</h3>
+        <a href="/announcements" class="btn btn-sm btn-outline">Xem tất cả</a>
+      </div>
+
+      <% if (announcements.length === 0) { %>
+        <p style="color: var(--text-muted); padding: 1rem 0;">Chưa có thông báo nào mới.</p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <% announcements.forEach(a => { %>
+            <div style="padding: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); <%= a.is_read == 0 ? 'background: #FFFDF5; border-color: var(--accent);' : '' %>">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary);"><%= a.title %></h4>
+                <% if (a.is_read == 0) { %>
+                  <span class="badge badge-danger">Mới</span>
+                <% } %>
+              </div>
+              <p style="font-size: 0.85rem; color: #475569; margin-top: 0.35rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                <%= a.content %>
+              </p>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                📅 <%= new Date(a.created_at).toLocaleDateString('vi-VN') %> • BQL Tòa nhà
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- TỔNG HỢP HOẠT ĐỘNG CỦA CĂN HỘ -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- LỊCH TIỆN ÍCH SẮP TỚI -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🏊 Lịch Tiện Ích Đã Đặt</h3>
+          <a href="/amenities" class="btn btn-sm btn-outline">Đặt thêm</a>
+        </div>
+        <% if (myBookings.length === 0) { %>
+          <p style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">Bạn chưa có lịch hẹn sử dụng tiện ích nào trong tuần này.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <% myBookings.forEach(b => { %>
+              <div style="padding: 0.65rem 0.85rem; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="color: var(--primary);"><%= b.amenity_name %></strong>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    📅 <%= new Date(b.booking_date).toLocaleDateString('vi-VN') %> • ⏰ <%= b.start_time %> - <%= b.end_time %>
+                  </div>
+                </div>
+                <span class="badge badge-success">Đã xác nhận</span>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- PHẢN ÁNH CỦA BẠN GẦN ĐÂY -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">💬 Ý Kiến Phản Ánh Gần Đây</h3>
+          <a href="/feedbacks" class="btn btn-sm btn-outline">Gửi mới</a>
+        </div>
+        <% if (myFeedbacks.length === 0) { %>
+          <p style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">Bạn chưa gửi phản ánh hoặc khiếu nại nào.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <% myFeedbacks.forEach(f => { %>
+              <div style="padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.85rem; font-weight: 700;">[<%= f.category %>] <%= f.title %></span>
+                  <span class="badge <%= f.status === 'resolved' ? 'badge-success' : (f.status === 'in_progress' ? 'badge-info' : 'badge-warning') %>">
+                    <%= f.status === 'resolved' ? 'Đã giải quyết' : (f.status === 'in_progress' ? 'Đang xử lý' : 'Chờ xử lý') %>
+                  </span>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/footer') %>

@@ -1,0 +1,81 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📖 Cẩm Nang & Nội Quy Quản Lý Chung Cư</h1>
+      <p class="page-subtitle">Cơ sở Tri thức chuẩn (Knowledge Base) phục vụ cư dân và Huấn luyện Trợ lý ảo AI</p>
+    </div>
+    <button class="btn btn-accent" onclick="toggleChatbot()">🤖 Hỏi Trợ Lý Ảo AI</button>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <form action="/rules" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+      <div style="flex: 1; min-width: 220px;">
+        <label>Tìm kiếm quy định (Từ khóa, số điều, tiêu đề)</label>
+        <input type="text" name="keyword" value="<%= filters.keyword || '' %>" placeholder="VD: thú cưng, tiếng ồn, sạc pin, khoan đục...">
+      </div>
+
+      <div style="width: 220px;">
+        <label>Phân loại nhóm nội quy</label>
+        <select name="category">
+          <option value="">-- Tất cả các nhóm --</option>
+          <% categories.forEach(c => { %>
+            <option value="<%= c %>" <%= filters.category === c ? 'selected' : '' %>><%= c %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Tìm Kiếm</button>
+      <a href="/rules" class="btn btn-outline">Tất Cả</a>
+    </form>
+  </div>
+
+  <!-- RULES LIST -->
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    <% if (rules.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        Không tìm thấy điều khoản nào khớp với từ khóa.
+      </div>
+    <% } else { %>
+      <% rules.forEach(r => { %>
+        <div class="card" id="<%= r.rule_code %>">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <div>
+              <span class="badge badge-primary"><%= r.category %></span>
+              <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-top: 0.35rem;">
+                [<%= r.rule_code %>] <%= r.title %>
+              </h3>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="askAiAboutRule('<%= r.rule_code %>', `<%= r.title %>`)">
+              🤖 Hỏi AI về điều này
+            </button>
+          </div>
+
+          <div style="font-size: 0.95rem; color: #334155; line-height: 1.7; background: #F8FAFC; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <%= r.content %>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  function askAiAboutRule(code, title) {
+    const question = `Quy định tại ${code} (${title}) như thế nào? Cần lưu ý gì khi thực hiện?`;
+    const widget = document.getElementById('chatbot-widget');
+    if (!widget.classList.contains('active')) {
+      toggleChatbot();
+    }
+    const input = document.getElementById('chat-input');
+    if (input) {
+      input.value = question;
+      submitChatMessage();
+    }
+  }
+</script>
+
+<%- include('../layouts/footer') %>

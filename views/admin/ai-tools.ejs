@@ -1,0 +1,328 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">✨ Trung Tâm Trí Tuệ Nhân Tạo (Gemini AI Studio)</h1>
+      <p class="page-subtitle">Tự động hóa tác vụ quản lý chung cư thông qua mô hình ngôn ngữ lớn Google Gemini</p>
+    </div>
+    <div style="background: rgba(212, 175, 55, 0.15); border: 1px solid var(--accent); padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 700; color: #854D0E;">
+      ⚡ Model: gemini-2.5-flash (@google/genai)
+    </div>
+  </div>
+
+  <!-- BẢNG CẤU HÌNH TRÍ TUỆ NHÂN TẠO (LOCAL OLLAMA HOẶC GEMINI CLOUD) -->
+  <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%); border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h4 style="margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+          🤖 Trạng Thái Động Cơ Trí Tuệ Nhân Tạo
+          <% if (typeof aiStatus !== 'undefined' && aiStatus && aiStatus.isOllamaActive) { %>
+            <span id="aiStatusBadge" class="badge badge-success" style="background: #15803D;">
+              🟢 Ưu tiên 1: Ollama Localhost AI (<%= aiStatus.model %>)
+            </span>
+          <% } else if (typeof aiStatus !== 'undefined' && aiStatus && aiStatus.isLiveAiConnected) { %>
+            <span id="aiStatusBadge" class="badge badge-primary" style="background: #2563EB;">
+              🔵 Ưu tiên 2: Google Gemini Cloud (<%= aiStatus.model %>)
+            </span>
+          <% } else { %>
+            <span id="aiStatusBadge" class="badge badge-warning" style="background: #D97706;">
+              🟡 Ưu tiên 3: Smart Semantic Local Engine
+            </span>
+          <% } %>
+        </h4>
+        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+          <% if (typeof aiStatus !== 'undefined' && aiStatus && aiStatus.isOllamaActive) { %>
+            ⚡ <strong>Chế độ Ưu tiên 1 kích hoạt:</strong> Mô hình LLM đang chạy trực tiếp trên Localhost (cổng 11434). <strong>100% không cần API Key, không phụ thuộc mạng</strong>, bảo mật dữ liệu tuyệt đối theo chuẩn On-Premise.
+          <% } else { %>
+            ⚡ Hệ thống hỗ trợ đa động cơ (Multi-Engine): Tự động phát hiện <strong>Ollama Localhost</strong> (không cần key) hoặc kết nối <strong>Google Gemini API</strong> dự phòng bên dưới.
+          <% } %>
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; width: 100%; max-width: 480px;">
+        <input type="password" id="inputApiKey" placeholder="Nhập Gemini API Key dự phòng..." style="flex: 1 1 180px; min-width: 160px; padding: 0.5rem 0.75rem; font-size: 0.85rem;" value="<%= (typeof aiStatus !== 'undefined' && aiStatus && aiStatus.hasApiKey) ? '••••••••••••••••••••' : '' %>">
+        <button class="btn btn-sm btn-outline" type="button" onclick="toggleShowKey()" title="Hiện/ẩn key">👁️</button>
+        <button class="btn btn-sm btn-primary" type="button" id="btnSaveKey" onclick="saveApiKey()">Lưu Cấu Hình</button>
+      </div>
+    </div>
+    <div id="apiKeyNotice" style="display: none; margin-top: 0.75rem; font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 4px;"></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- TÍNH NĂNG 1: SOẠN THẢO THÔNG BÁO TỰ ĐỘNG -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🤖 1. Soạn thảo Thông báo Ban Quản Lý</h3>
+        <span class="badge badge-primary">Tự động hóa</span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Nhập nhanh các thông số cơ bản, Gemini AI sẽ tự động sinh bản thông báo hành chính chuyên nghiệp, chuẩn mực và đầy đủ khuyến cáo an toàn.
+      </p>
+
+      <div class="form-group">
+        <label>Loại sự kiện / Công việc</label>
+        <select id="aiEventType">
+          <option value="Bảo dưỡng định kỳ hệ thống thang máy">Bảo dưỡng định kỳ hệ thống thang máy</option>
+          <option value="Tạm ngừng cấp nước sinh hoạt để súc rửa bể ngầm">Tạm ngừng cấp nước sinh hoạt để súc rửa bể ngầm</option>
+          <option value="Phun thuốc diệt muỗi và côn trùng phòng dịch sốt xuất huyết">Phun thuốc diệt muỗi phòng dịch sốt xuất huyết</option>
+          <option value="Tổ chức Hội nghị Cư dân thường niên năm 2026">Tổ chức Hội nghị Cư dân thường niên</option>
+          <option value="Kiểm tra hệ thống báo cháy và chuông báo sự cố tự động">Kiểm tra hệ thống báo cháy & còi hú</option>
+        </select>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Thời gian dự kiến</label>
+          <input type="text" id="aiEventTime" value="Từ 08h30 đến 11h30 Thứ Bảy ngày 15/09/2026">
+        </div>
+        <div class="form-group">
+          <label>Phạm vi áp dụng</label>
+          <select id="aiTargetScope">
+            <option value="Toàn bộ Tòa nhà A và Tòa nhà B">Toàn bộ chung cư (Tòa A & B)</option>
+            <option value="Khu vực Tháp A từ tầng 1 đến tầng 25">Khu vực Tháp A (Tầng 1 - 25)</option>
+            <option value="Khu vực Tháp B">Khu vực Tháp B</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Lưu ý bổ sung của BQL</label>
+        <input type="text" id="aiNote" value="Trong thời gian làm việc cư dân dùng thang máy hàng số 03 hoặc thang bộ thoát hiểm.">
+      </div>
+
+      <button class="btn btn-primary" id="btnDraftAi" onclick="generateDraftAnnouncement()" style="width: 100%;">
+        ⚡ Yêu cầu Gemini AI Soạn thảo văn bản
+      </button>
+
+      <!-- KẾT QUẢ VĂN BẢN SINH RA -->
+      <div id="aiDraftResult" style="display: none; margin-top: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <label style="margin-bottom: 0; color: var(--primary);">Văn bản đề xuất (Có thể chỉnh sửa trực tiếp):</label>
+          <span id="aiDraftBadge" class="badge badge-success">Sẵn sàng</span>
+        </div>
+        
+        <form action="/announcements/create" method="POST">
+          <input type="hidden" name="target_scope" id="postScope" value="all">
+          <input type="hidden" name="category" value="maintenance">
+          <input type="text" name="title" id="postTitle" required style="margin-bottom: 0.5rem; font-weight: 700; color: var(--primary);">
+          <textarea name="content" id="postContent" rows="10" required style="font-size: 0.88rem; line-height: 1.6;"></textarea>
+
+          <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 0.75rem;">
+            📢 Đăng thông báo này ngay vào Hệ thống
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TÍNH NĂNG 2: TỔNG HỢP VÀ PHÂN TÍCH PHẢN ÁNH CƯ DÂN HÀNG TUẦN -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📊 2. AI Báo cáo Tổng hợp Ý kiến Cư dân</h3>
+        <span class="badge badge-info">Tuần hiện tại</span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Tự động phân loại, chỉ ra các điểm nóng bất cập và gợi ý phương án khắc phục triệt để cho Ban Quản Lý.
+      </p>
+
+      <div style="background: #F8FAFC; border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem;">
+        <strong>Dữ liệu đầu vào:</strong> Đang lấy <strong><%= feedbacks.length %></strong> ý kiến phản ánh gần nhất từ cơ sở dữ liệu để đưa vào bộ phân tích.
+      </div>
+
+      <button class="btn btn-primary" id="btnSummarizeAi" onclick="runFeedbackSummary()" style="width: 100%;">
+        🔍 Chạy phân tích & Tổng hợp Báo cáo tuần
+      </button>
+
+      <!-- KẾT QUẢ BÁO CÁO -->
+      <div id="aiSummaryResult" style="display: none; margin-top: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <label style="margin-bottom: 0; color: var(--primary);">Báo cáo tổng kết tuần của AI:</label>
+          <button class="btn btn-sm btn-outline" onclick="copyAiReport()">Sao chép 📋</button>
+        </div>
+        <div id="aiSummaryContent" style="background: #FFFDF5; border: 1px solid #FDE68A; border-radius: var(--radius-sm); padding: 1rem; font-size: 0.88rem; line-height: 1.6; white-space: pre-line; max-height: 360px; overflow-y: auto;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TÍNH NĂNG 3: TRẢI NGHIỆM RAG NỘI QUY TRỰC TIẾP -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+      <h3 class="card-title">🤖 3. Thử nghiệm Trợ lý Tri thức RAG (Nội quy chung cư)</h3>
+      <span class="badge badge-success">Retrieval-Augmented Generation</span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+      Mô phỏng cách Trợ lý AI kết nối cơ sở dữ liệu <code>internal_rules</code> để giải đáp câu hỏi của cư dân.
+    </p>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <input type="text" id="ragTestInput" placeholder="VD: Nuôi chó mèo có cần đăng ký không? Giờ nào cấm gây ồn?" style="flex: 1;" onkeydown="if(event.key === 'Enter') runRagTest()">
+      <button class="btn btn-primary" onclick="runRagTest()">Hỏi Trợ Lý AI</button>
+    </div>
+
+    <div id="ragTestResult" style="display: none; margin-top: 1rem; background: #F1F5F9; border-radius: var(--radius-sm); padding: 1rem;">
+      <div id="ragAnswerText" style="line-height: 1.6; font-size: 0.9rem;"></div>
+      <div id="ragCitations" style="margin-top: 0.75rem; font-size: 0.8rem; color: #475569; border-top: 1px dashed #CBD5E1; padding-top: 0.5rem;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 1. Sinh thông báo
+  async function generateDraftAnnouncement() {
+    const btn = document.getElementById('btnDraftAi');
+    const resultBox = document.getElementById('aiDraftResult');
+    const event_type = document.getElementById('aiEventType').value;
+    const event_time = document.getElementById('aiEventTime').value;
+    const target_scope = document.getElementById('aiTargetScope').value;
+    const note = document.getElementById('aiNote').value;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ AI đang suy nghĩ và viết bài...';
+
+    try {
+      const res = await fetch('/ai/generate-announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_type, event_time, target_scope, note })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultBox.style.display = 'block';
+        const lines = data.content.split('\n');
+        const firstLine = lines[0] || `[THÔNG BÁO] V/v ${event_type}`;
+        document.getElementById('postTitle').value = firstLine.replace(/^[#*\s]+/, '');
+        document.getElementById('postContent').value = data.content;
+        document.getElementById('postScope').value = target_scope.includes('Tháp A') ? 'building_a' : (target_scope.includes('Tháp B') ? 'building_b' : 'all');
+        document.getElementById('aiDraftBadge').textContent = data.source === 'gemini-ai' ? 'Gemini 2.5 Flash' : 'Offline Fallback';
+      } else {
+        alert('Lỗi: ' + (data.message || 'Không thể tạo văn bản'));
+      }
+    } catch (err) {
+      alert('Lỗi kết nối tới AI: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Yêu cầu Gemini AI Soạn thảo văn bản';
+    }
+  }
+
+  // 2. Tổng hợp phản ánh
+  async function runFeedbackSummary() {
+    const btn = document.getElementById('btnSummarizeAi');
+    const resultBox = document.getElementById('aiSummaryResult');
+    const contentBox = document.getElementById('aiSummaryContent');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang phân tích dữ liệu phản ánh...';
+
+    try {
+      const res = await fetch('/ai/summarize-feedbacks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultBox.style.display = 'block';
+        contentBox.textContent = data.summary;
+      } else {
+        alert('Lỗi: ' + data.message);
+      }
+    } catch (err) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Chạy phân tích & Tổng hợp Báo cáo tuần';
+    }
+  }
+
+  function copyAiReport() {
+    const text = document.getElementById('aiSummaryContent').textContent;
+    navigator.clipboard.writeText(text).then(() => alert('Đã sao chép báo cáo vào bộ nhớ tạm!'));
+  }
+
+  // 3. RAG test
+  async function runRagTest() {
+    const input = document.getElementById('ragTestInput');
+    const val = input.value.trim();
+    if (!val) return;
+
+    const resultBox = document.getElementById('ragTestResult');
+    const answerBox = document.getElementById('ragAnswerText');
+    const citationsBox = document.getElementById('ragCitations');
+
+    answerBox.innerHTML = '<em>⚡ Đang truy vấn nội quy và tổng hợp câu trả lời...</em>';
+    citationsBox.innerHTML = '';
+    resultBox.style.display = 'block';
+
+    try {
+      const res = await fetch('/ai/chat-rag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: val })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        answerBox.innerHTML = data.answer.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        if (data.matchedRules && data.matchedRules.length > 0) {
+          citationsBox.innerHTML = '<strong>Điều khoản tham chiếu:</strong> ' +
+            data.matchedRules.map(r => `<span style="background:#E2E8F0; padding:2px 8px; border-radius:4px; margin-right:6px; font-weight:600;">${r.code}: ${r.title}</span>`).join('');
+        }
+      } else {
+        answerBox.textContent = 'Không nhận được câu trả lời từ AI.';
+      }
+    } catch (err) {
+      answerBox.textContent = 'Lỗi kết nối: ' + err.message;
+    }
+  }
+
+  function toggleShowKey() {
+    const inp = document.getElementById('inputApiKey');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  async function saveApiKey() {
+    const key = document.getElementById('inputApiKey').value.trim();
+    const btn = document.getElementById('btnSaveKey');
+    const notice = document.getElementById('apiKeyNotice');
+
+    btn.disabled = true;
+    btn.textContent = 'Đang kiểm tra...';
+    notice.style.display = 'none';
+
+    try {
+      const res = await fetch('/ai/set-api-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: key })
+      });
+      const data = await res.json();
+
+      notice.style.display = 'block';
+      if (data.success) {
+        notice.style.background = '#ECFDF5';
+        notice.style.color = '#065F46';
+        notice.style.border = '1px solid #A7F3D0';
+        notice.textContent = '✅ ' + data.message;
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        notice.style.background = '#FEF2F2';
+        notice.style.color = '#991B1B';
+        notice.style.border = '1px solid #FECACA';
+        notice.textContent = '❌ ' + data.message;
+      }
+    } catch (err) {
+      notice.style.display = 'block';
+      notice.style.background = '#FEF2F2';
+      notice.style.color = '#991B1B';
+      notice.textContent = '❌ Lỗi kết nối: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Lưu & Kích hoạt';
+    }
+  }
+</script>
+
+<%- include('../layouts/footer') %>

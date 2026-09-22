@@ -1,0 +1,33 @@
+  <footer>
+    <div style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <strong>Hệ Thống Quản Lý Chung Cư Thông Minh Tích Hợp AI (Gemini)</strong><br>
+        <span style="font-size: 0.8rem; opacity: 0.8;">Đề tài 21 - Nhóm 25 • Ban Quản Lý Vinhomes Smart Apartment</span>
+      </div>
+      <div style="text-align: right; font-size: 0.85rem;">
+        <span>Hotline BQL: <strong>1900 8888</strong> • Kỹ thuật & Bảo vệ 24/7: <strong>024 3999 8888</strong></span><br>
+        <span style="color: var(--accent); font-weight: 600;">© 2026 SmartBuilding. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <% if (typeof user !== 'undefined' && user) { %>
+    <%- include('../partials/chatbot') %>
+  <% } %>
+
+  <!-- Scripts -->
+  <script src="/js/socket-client.js"></script>
+  <script src="/js/chatbox.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+          .catch(err => console.log('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

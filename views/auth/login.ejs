@@ -1,0 +1,117 @@
+<%- include('../layouts/header') %>
+
+<div class="login-wrapper">
+  <div class="login-card">
+    
+    <!-- Top banner -->
+    <div class="login-header">
+      <div style="font-size: 2.2rem; margin-bottom: 0.35rem;">🏢</div>
+      <h2 style="font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px;">SMART APARTMENT AI</h2>
+      <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.2rem;">Hệ Thống Quản Lý Cư Dân Chung Cư Tích Hợp AI</p>
+    </div>
+
+    <div class="login-body">
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+      <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <form id="loginForm" action="/auth/login" method="POST">
+        <div class="form-group">
+          <label for="identifier">Số điện thoại hoặc Email</label>
+          <input type="text" id="identifier" name="identifier" placeholder="VD: 0901234567 hoặc admin@chungcu.vn" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input type="password" id="password" name="password" placeholder="Nhập mật khẩu..." required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem; margin-top: 0.5rem;">
+          Đăng nhập Hệ Thống 🚀
+        </button>
+      </form>
+
+      <!-- GỢI Ý TÀI KHOẢN MẪU (CLICK ĐỂ TỰ ĐỘNG ĐIỀN VÀO FORM) -->
+      <div style="margin-top: 2rem; border-top: 1px dashed #CBD5E1; padding-top: 1.25rem;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: #1F4E79; margin-bottom: 0.75rem; text-align: center;">
+          📋 GỢI Ý TÀI KHOẢN MẪU (CLICK ĐỂ ĐIỀN NHANH)
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button type="button" class="btn btn-outline" onclick="fillLogin('0901234567', 'admin123')" style="justify-content: flex-start; text-align: left; padding: 0.55rem 0.85rem; border-color: #93C5FD; background: #EFF6FF;">
+            <span style="font-size: 1.2rem;">👨‍💼</span>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem; color: #1E40AF;">Ban Quản Lý (Admin)</div>
+              <div style="font-size: 0.75rem; color: #64748B;">SĐT: <code>0901234567</code> • MK: <code>admin123</code></div>
+            </div>
+          </button>
+
+          <button type="button" class="btn btn-outline" onclick="fillLogin('0909876543', 'ketoan123')" style="justify-content: flex-start; text-align: left; padding: 0.55rem 0.85rem; border-color: #86EFAC; background: #F0FDF4;">
+            <span style="font-size: 1.2rem;">👩‍💻</span>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem; color: #166534;">Kế Toán Tòa Nhà (Accountant)</div>
+              <div style="font-size: 0.75rem; color: #64748B;">SĐT: <code>0909876543</code> • MK: <code>ketoan123</code></div>
+            </div>
+          </button>
+
+          <button type="button" class="btn btn-outline" onclick="fillLogin('0912345678', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.55rem 0.85rem; border-color: #FDE047; background: #FEFCE8;">
+            <span style="font-size: 1.2rem;">👨‍👩‍👧</span>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem; color: #854D0E;">Cư Dân (Hoàng Minh Đức - Căn A0101)</div>
+              <div style="font-size: 0.75rem; color: #64748B;">SĐT: <code>0912345678</code> • MK: <code>cudan123</code></div>
+            </div>
+          </button>
+
+          <!-- Nút bấm xem thêm các tài khoản cư dân mẫu khác -->
+          <div style="text-align: center; margin-top: 0.25rem;">
+            <button type="button" class="btn btn-sm btn-outline" onclick="toggleMoreResidents()" style="font-size: 0.75rem; border-style: dashed; width: 100%; justify-content: center; color: var(--primary);">
+              👥 Bấm để xem thêm các tài khoản Cư dân khác (A0102, A0103, A0201...)
+            </button>
+          </div>
+
+          <div id="moreResidentsList" style="display: none; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0987654321', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Trần Anh Dũng</strong> (P.A0102) • SĐT: <code>0987654321</code> • MK: <code>cudan123</code></div>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0934567890', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Lê Văn Thắng</strong> (P.A0103) • SĐT: <code>0934567890</code> • MK: <code>cudan123</code></div>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0956789012', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Vũ Đình Trọng</strong> (P.A0201) • SĐT: <code>0956789012</code> • MK: <code>cudan123</code></div>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0967890123', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Ngô Thanh Vân</strong> (P.A0202) • SĐT: <code>0967890123</code> • MK: <code>cudan123</code></div>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0978901234', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Đỗ Mạnh Cường</strong> (P.A0301) • SĐT: <code>0978901234</code> • MK: <code>cudan123</code></div>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('0989012345', 'cudan123')" style="justify-content: flex-start; text-align: left; padding: 0.45rem 0.75rem; background: #FFFDF5; border-color: #FDE68A;">
+              <div><strong>Bùi Tuyết Mai</strong> (P.B0101) • SĐT: <code>0989012345</code> • MK: <code>cudan123</code></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillLogin(phone, pass) {
+    document.getElementById('identifier').value = phone;
+    document.getElementById('password').value = pass;
+    document.getElementById('identifier').focus();
+  }
+
+  function toggleMoreResidents() {
+    const box = document.getElementById('moreResidentsList');
+    if (box) {
+      box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+    }
+  }
+</script>
+
+<%- include('../layouts/footer') %>

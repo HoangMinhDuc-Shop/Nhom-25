@@ -1,0 +1,93 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📑 Quản Lý Danh Mục Biểu Phí & Đơn Giá</h1>
+      <p class="page-subtitle">Thiết lập đơn giá định mức cho từng loại dịch vụ chung cư</p>
+    </div>
+    <a href="/fees" class="btn btn-outline">⬅️ Quay lại Sổ Thu Phí</a>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã Loại Phí</th>
+          <th>Tên Khoản Phí</th>
+          <th>Đơn Vị Tính</th>
+          <th>Đơn Giá Hiện Hành</th>
+          <th>Mô Tả / Căn Cứ</th>
+          <th>Trạng Thái</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% feeTypes.forEach(ft => { %>
+          <tr>
+            <td>#<%= ft.id %></td>
+            <td><strong style="color: var(--primary); font-size: 1rem;"><%= ft.name %></strong></td>
+            <td><span class="badge badge-secondary"><%= ft.unit %></span></td>
+            <td><strong style="color: var(--primary); font-size: 1.05rem;"><%= Number(ft.price_per_unit).toLocaleString('vi-VN') %> đ</strong></td>
+            <td style="color: var(--text-muted);"><%= ft.description || '-' %></td>
+            <td>
+              <span class="badge <%= ft.status === 'active' ? 'badge-success' : 'badge-danger' %>">
+                <%= ft.status === 'active' ? 'Áp dụng' : 'Tạm dừng' %>
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="openEditFeeTypeModal('<%= ft.id %>', '<%= ft.name %>', '<%= ft.price_per_unit %>', `<%= (ft.description || '').replace(/`/g, '\\`') %>`)">
+                Chỉnh sửa ✏️
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL SỬA BIỂU PHÍ -->
+<div id="editFeeTypeModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">Điều Chỉnh Đơn Giá <span id="ftName"></span></h3>
+      <button class="close-modal" onclick="closeModal('editFeeTypeModal')">&times;</button>
+    </div>
+    <form action="/fees/types/update" method="POST">
+      <input type="hidden" id="ftId" name="id">
+      <div class="form-group">
+        <label>Đơn giá mới (VNĐ)</label>
+        <input type="number" id="ftPrice" name="price_per_unit" required min="0" step="500">
+      </div>
+      <div class="form-group">
+        <label>Mô tả quy định / Căn cứ quyết định</label>
+        <textarea id="ftDesc" name="description" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Lưu Thay Đổi Đơn Giá</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openEditFeeTypeModal(id, name, price, desc) {
+    document.getElementById('ftId').value = id;
+    document.getElementById('ftName').textContent = name;
+    document.getElementById('ftPrice').value = price;
+    document.getElementById('ftDesc').value = desc;
+    document.getElementById('editFeeTypeModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

@@ -1,0 +1,66 @@
+<!-- AI Assistant Floating Widget (Role-Aware AI Copilot) -->
+<div class="chatbot-trigger" onclick="toggleChatbot()" title="Trợ lý ảo ChungCuAI (Hỏi đáp & Tra cứu nghiệp vụ)">
+  🤖
+</div>
+
+<div class="chatbot-widget" id="chatbot-widget">
+  <div class="chat-header">
+    <h4>
+      <span>🤖 ChungCuAI</span>
+      <% if (locals.user && user.role === 'admin') { %>
+        <span class="badge-ai" style="background:#4338CA;">Admin Copilot</span>
+      <% } else if (locals.user && user.role === 'accountant') { %>
+        <span class="badge-ai" style="background:#0D9488;">Kế toán Copilot</span>
+      <% } else { %>
+        <span class="badge-ai" style="background:#2563EB;">Resident Concierge</span>
+      <% } %>
+    </h4>
+    <button onclick="toggleChatbot()" style="background:transparent; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">&times;</button>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="msg msg-bot">
+      <% if (locals.user && user.role === 'admin') { %>
+        Xin chào Quản trị viên <strong><%= user.full_name %></strong>! 🛡️<br>
+        Tôi là <strong>Trợ lý Điều hành Vận hành</strong> của Ban Quản Lý. Tôi có thể tra cứu tức thời: <strong>Số lượng cư dân, tỷ lệ lấp đầy căn hộ, phản ánh chưa xử lý, tổng nợ phí tòa nhà</strong> hoặc các điều khoản nội quy.<br><br>
+        Hôm nay bạn cần kiểm tra chỉ số vận hành nào?
+      <% } else if (locals.user && user.role === 'accountant') { %>
+        Xin chào Kế toán viên <strong><%= user.full_name %></strong>! 💼<br>
+        Tôi là <strong>Trợ lý Nghiệp vụ Tài chính & Thu phí</strong>. Tôi có thể hỗ trợ: <strong>Tra cứu ai chưa nộp tiền, danh sách căn hộ nợ phí, thống kê tỷ lệ thu phí, biểu phí hiện hành</strong>...<br><br>
+        Bạn cần hỗ trợ nghiệp vụ kế toán nào?
+      <% } else { %>
+        Xin chào <strong><%= locals.user ? user.full_name : 'Quý cư dân' %></strong><%= (locals.user && user.apartment_number) ? ' (Căn ' + user.apartment_number + ')' : '' %>! 👋<br>
+        Tôi là <strong>Trợ lý Cá nhân Cư dân</strong>. Tôi có thể tra cứu: <strong>Tiền phí của bạn, lịch tiện ích đã đặt, tình trạng khiếu nại</strong> và giải đáp tức thời <strong>15 điều nội quy chung cư</strong> (thú cưng, tiếng ồn, gửi xe, sạc điện...).<br><br>
+        Bạn muốn hỏi điều gì hôm nay?
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Gợi ý câu hỏi nhanh theo phân quyền người dùng -->
+  <div class="chat-chips">
+    <% if (locals.user && user.role === 'admin') { %>
+      <div class="chip" onclick="sendChipQuestion(this)">Có bao nhiêu cư dân đang ở?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Tình trạng căn hộ trống?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Có phản ánh nào chưa xử lý?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Xem ai chưa nộp tiền phí?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Giờ nào cấm khoan đục?</div>
+    <% } else if (locals.user && user.role === 'accountant') { %>
+      <div class="chip" onclick="sendChipQuestion(this)">Xem ai chưa nộp tiền?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Tổng tiền phí chưa thu?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Tỷ lệ thu phí tòa nhà?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Biểu phí dịch vụ chung cư?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Có được nuôi chó không?</div>
+    <% } else { %>
+      <div class="chip" onclick="sendChipQuestion(this)">Tôi có nợ tiền không?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Lịch đặt tiện ích của tôi?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Có được nuôi chó không?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Giờ nào cấm khoan đục?</div>
+      <div class="chip" onclick="sendChipQuestion(this)">Quy định sạc xe điện?</div>
+    <% } %>
+  </div>
+
+  <div class="chat-input-bar">
+    <input type="text" id="chat-input" placeholder="Nhập câu hỏi hoặc yêu cầu tra cứu..." onkeydown="if(event.key === 'Enter') submitChatMessage()">
+    <button class="btn btn-primary btn-sm" onclick="submitChatMessage()">Gửi</button>
+  </div>
+</div>

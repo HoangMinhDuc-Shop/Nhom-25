@@ -1,0 +1,128 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📊 Tổng quan Điều hành Ban Quản Lý</h1>
+      <p class="page-subtitle">Hệ thống theo dõi cư dân, tài chính và dịch vụ tòa nhà thông minh</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="/ai/tools" class="btn btn-accent">✨ Trung tâm AI</a>
+      <a href="/announcements" class="btn btn-primary">📢 Phát thông báo</a>
+    </div>
+  </div>
+
+  <!-- STATS CARDS -->
+  <div class="grid-4">
+    <div class="card stat-card">
+      <div class="stat-icon blue">🏠</div>
+      <div class="stat-info">
+        <h3><%= apt.occupied %> / <%= apt.total %></h3>
+        <p>Căn hộ có người ở (<%= Math.round((apt.occupied/apt.total)*100) %>%)</p>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-icon green">👥</div>
+      <div class="stat-info">
+        <h3><%= resCount.total %></h3>
+        <p>Cư dân đang cư trú (<%= resCount.owners %> Chủ hộ)</p>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-icon yellow">💵</div>
+      <div class="stat-info">
+        <h3><%= Number(fee.total_amount || 0).toLocaleString('vi-VN') %> đ</h3>
+        <p>Tổng công nợ thu phí (Đã thu: <%= Number(fee.paid_amount || 0).toLocaleString('vi-VN') %> đ)</p>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-icon <%= fb.pending > 0 ? 'red' : 'purple' %>">💬</div>
+      <div class="stat-info">
+        <h3><%= fb.pending %> / <%= fb.total %></h3>
+        <p>Phản ánh chờ xử lý (<%= fb.resolved %> đã xong)</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- CÔNG VIỆC CẦN XỬ LÝ: PHẢN ÁNH CƯ DÂN -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🚨 Ý kiến cư dân mới nhất</h3>
+        <a href="/feedbacks" class="btn btn-sm btn-outline">Xem tất cả (<%= fb.total %>)</a>
+      </div>
+
+      <% if (recentFeedbacks.length === 0) { %>
+        <p style="color: var(--text-muted); padding: 1rem 0;">Chưa có phản ánh nào từ cư dân.</p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <% recentFeedbacks.forEach(f => { %>
+            <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; font-size: 0.9rem;">
+                  [<%= f.category %>] <%= f.title %>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  Căn hộ: <strong><%= f.apartment_number || 'N/A' %></strong> • <%= f.resident_name %> • <%= new Date(f.created_at).toLocaleDateString('vi-VN') %>
+                </div>
+              </div>
+              <span class="badge <%= f.status === 'resolved' ? 'badge-success' : (f.status === 'in_progress' ? 'badge-info' : 'badge-warning') %>">
+                <%= f.status === 'resolved' ? 'Đã xử lý' : (f.status === 'in_progress' ? 'Đang xử lý' : 'Chờ duyệt') %>
+              </span>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- BẢNG TIN THÔNG BÁO GẦN ĐÂY -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📢 Thông báo phát hành gần đây</h3>
+        <a href="/announcements" class="btn btn-sm btn-outline">Quản lý bảng tin</a>
+      </div>
+
+      <% if (recentAnnouncements.length === 0) { %>
+        <p style="color: var(--text-muted); padding: 1rem 0;">Chưa có thông báo nào được đăng.</p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <% recentAnnouncements.forEach(a => { %>
+            <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary);"><%= a.title %></h4>
+                <span class="badge badge-secondary"><%= a.target_scope === 'all' ? 'Toàn chung cư' : a.target_scope %></span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                <%= a.content %>
+              </p>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">
+                Người đăng: <%= a.author_name %> • <%= new Date(a.created_at).toLocaleString('vi-VN') %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- PHÍ CHƯA THU & ĐIỀU HƯỚNG NHANH -->
+  <div class="card" style="margin-top: 1rem;">
+    <div class="card-header">
+      <h3 class="card-title">⚡ Lối tắt chức năng Quản trị</h3>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+      <a href="/ai/tools" class="btn btn-primary">🤖 Soạn thảo thông báo bằng AI</a>
+      <a href="/ai/tools" class="btn btn-outline">📊 AI Tổng hợp ý kiến cư dân tuần</a>
+      <a href="/apartments" class="btn btn-outline">🏠 Thêm mới căn hộ</a>
+      <a href="/residents" class="btn btn-outline">👤 Đăng ký cư dân & cấp tài khoản</a>
+      <a href="/fees" class="btn btn-outline">💵 Kiểm tra công nợ & Gạch nợ</a>
+      <a href="/amenities" class="btn btn-outline">🏊 Lịch đặt Hồ bơi / Sân Tennis</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/footer') %>

@@ -1,0 +1,168 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🏊 Đăng Ký & Sử Dụng Tiện Ích Chung Cư</h1>
+      <p class="page-subtitle">Hệ thống đặt lịch thông minh, tự động kiểm tra và ngăn chặn trùng lịch (Conflict Prevention)</p>
+    </div>
+    <a href="/resident/home" class="btn btn-outline">⬅️ Về Trang Chủ</a>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- AMENITIES CARDS -->
+  <div class="grid-3" style="margin-bottom: 2rem;">
+    <% amenities.forEach(am => { %>
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <h3 style="color: var(--primary); font-size: 1.2rem; font-weight: 700;"><%= am.name %></h3>
+            <span class="badge <%= am.status === 'open' ? 'badge-success' : 'badge-danger' %>">
+              <%= am.status === 'open' ? 'Đang mở cửa' : 'Bảo trì' %>
+            </span>
+          </div>
+
+          <p style="font-size: 0.88rem; color: #475569; margin-bottom: 1rem; line-height: 1.5;">
+            <%= am.description %>
+          </p>
+
+          <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem;">
+            <div>⏰ <strong>Giờ mở cửa:</strong> <%= am.opening_hours %></div>
+            <div>👥 <strong>Sức chứa tối đa:</strong> <%= am.capacity %> người</div>
+            <div>💵 <strong>Đơn giá:</strong> <%= Number(am.price_per_hour) > 0 ? Number(am.price_per_hour).toLocaleString('vi-VN') + ' đ / giờ' : 'Miễn phí cho cư dân' %></div>
+          </div>
+        </div>
+
+        <% if (am.status === 'open') { %>
+          <button class="btn btn-primary" onclick="openBookModal('<%= am.id %>', '<%= am.name %>', '<%= am.price_per_hour %>')">
+            📅 Đặt Lịch Sử Dụng
+          </button>
+        <% } else { %>
+          <button class="btn btn-outline" disabled style="opacity: 0.6;">Tạm Ngưng Phục Vụ</button>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- BOOKINGS SCHEDULE TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">📅 Lịch Sử Đặt Chỗ Gần Đây</h3>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã Đặt</th>
+            <th>Tiện Ích</th>
+            <th>Cư Dân</th>
+            <th>Căn Hộ</th>
+            <th>Ngày Đặt</th>
+            <th>Khung Giờ</th>
+            <th>Chi Phí</th>
+            <th>Trạng Thái</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (bookings.length === 0) { %>
+            <tr>
+              <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Chưa có lịch đặt tiện ích nào.</td>
+            </tr>
+          <% } else { %>
+            <% bookings.forEach(b => { %>
+              <tr>
+                <td>#<%= b.id %></td>
+                <td><strong style="color: var(--primary);"><%= b.amenity_name %></strong></td>
+                <td><%= b.resident_name %></td>
+                <td><span class="badge badge-secondary"><%= b.apartment_number || 'N/A' %></span></td>
+                <td><strong><%= new Date(b.booking_date).toLocaleDateString('vi-VN') %></strong></td>
+                <td><span class="badge badge-info"><%= b.start_time %> - <%= b.end_time %></span></td>
+                <td><%= Number(b.total_price) > 0 ? Number(b.total_price).toLocaleString('vi-VN') + ' đ' : 'Miễn phí' %></td>
+                <td>
+                  <% if (b.status === 'confirmed') { %>
+                    <span class="badge badge-success">Đã xác nhận</span>
+                  <% } else if (b.status === 'pending') { %>
+                    <span class="badge badge-warning">Chờ duyệt</span>
+                  <% } else { %>
+                    <span class="badge badge-danger">Đã hủy</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (b.status !== 'cancelled' && (user.role === 'admin' || b.resident_id === user.id)) { %>
+                    <form action="/amenities/bookings/<%= b.id %>/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy lịch đặt này?')">
+                      <button type="submit" class="btn btn-sm btn-danger">Hủy lịch ❌</button>
+                    </form>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ĐẶT TIỆN ÍCH -->
+<div id="bookModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">Đăng Ký: <span id="bookAmenityName"></span></h3>
+      <button class="close-modal" onclick="closeModal('bookModal')">&times;</button>
+    </div>
+    <form action="/amenities/book" method="POST">
+      <input type="hidden" id="bookAmenityId" name="amenity_id">
+      
+      <div class="form-group">
+        <label>Chọn Ngày Sử Dụng</label>
+        <input type="date" name="booking_date" required min="<%= new Date().toISOString().split('T')[0] %>" value="<%= new Date().toISOString().split('T')[0] %>">
+      </div>
+
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Giờ Bắt Đầu</label>
+          <input type="time" name="start_time" required value="09:00">
+        </div>
+        <div class="form-group">
+          <label>Giờ Kết Thúc</label>
+          <input type="time" name="end_time" required value="11:00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ghi chú / Yêu cầu thêm (VD: Số lượng khách tham gia)</label>
+        <input type="text" name="note" placeholder="VD: Gia đình tổ chức tiệc sinh nhật khoảng 10 người...">
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+        * Hệ thống tự động kiểm tra xung đột thời gian với các cư dân khác. Nếu khung giờ đã kín, hệ thống sẽ yêu cầu chọn khung giờ khác.
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Xác Nhận Đặt Tiện Ích</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openBookModal(id, name, price) {
+    document.getElementById('bookAmenityId').value = id;
+    document.getElementById('bookAmenityName').textContent = name;
+    document.getElementById('bookModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

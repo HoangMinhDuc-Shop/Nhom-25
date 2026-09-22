@@ -1,0 +1,184 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">💳 Tra Cứu & Thanh Toán Phí Dịch Vụ Căn Hộ</h1>
+      <p class="page-subtitle">Căn hộ: <strong><%= user.apartment_number || 'N/A' %></strong> • <%= user.building_name || 'Tòa nhà A' %></p>
+    </div>
+    <a href="/resident/home" class="btn btn-outline">⬅️ Về Trang Chủ</a>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- STATS -->
+  <div class="grid-3">
+    <div class="card stat-card">
+      <div class="stat-icon blue">💰</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.totalAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p>Tổng tiền các kỳ phí</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon <%= stats.unpaidAmount > 0 ? 'red' : 'green' %>">⏳</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.unpaidAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p><%= stats.unpaidAmount > 0 ? 'Cần đóng (Chưa thanh toán)' : 'Đã tất toán toàn bộ' %></p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.paidAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p>Đã thanh toán thành công</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DANH SÁCH CÁC KHOẢN PHÍ -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">📋 Lịch Sử Các Kỳ Thu Phí</h3>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã HĐ</th>
+            <th>Khoản Mục Phí</th>
+            <th>Kỳ Phí</th>
+            <th>Số Tiền</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Thanh Toán</th>
+            <th>Hình Thức</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (transactions.length === 0) { %>
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Căn hộ của bạn hiện chưa có phát sinh phí nào.</td>
+            </tr>
+          <% } else { %>
+            <% transactions.forEach(t => { %>
+              <tr>
+                <td>#<%= t.id %></td>
+                <td><strong><%= t.fee_name %></strong></td>
+                <td><strong><%= t.billing_month %></strong></td>
+                <td><strong style="color: <%= t.status === 'paid' ? 'var(--success)' : 'var(--danger)' %>; font-size: 1rem;"><%= Number(t.amount).toLocaleString('vi-VN') %> đ</strong></td>
+                <td>
+                  <% if (t.status === 'paid') { %>
+                    <span class="badge badge-success">Đã nộp</span>
+                  <% } else if (t.status === 'overdue') { %>
+                    <span class="badge badge-danger">Quá hạn</span>
+                  <% } else { %>
+                    <span class="badge badge-warning">Chờ thanh toán</span>
+                  <% } %>
+                </td>
+                <td><%= t.paid_at ? new Date(t.paid_at).toLocaleDateString('vi-VN') : '-' %></td>
+                <td>
+                  <% if (t.payment_method === 'vnpay') { %>
+                    <span class="badge badge-info">VNPay QR</span>
+                  <% } else if (t.payment_method === 'transfer') { %>
+                    <span class="badge badge-secondary">Chuyển khoản</span>
+                  <% } else if (t.payment_method === 'cash') { %>
+                    <span class="badge badge-secondary">Tiền mặt</span>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% if (t.status !== 'paid') { %>
+                    <button class="btn btn-sm btn-accent" onclick="openPaymentModal('<%= t.id %>', '<%= t.fee_name %>', '<%= t.billing_month %>', '<%= Number(t.amount).toLocaleString('vi-VN') %>')">
+                      Thanh toán ngay 💳
+                    </button>
+                  <% } else { %>
+                    <span style="color: var(--success); font-size: 0.85rem; font-weight: 600;">✔️ Hoàn tất</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL THANH TOÁN TRỰC TUYẾN (MÔ PHỎNG VNPAY / VIETQR) -->
+<div id="paymentModal" class="modal">
+  <div class="modal-content" style="max-width: 500px; text-align: center;">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">Thanh Toán Phí Trực Tuyến</h3>
+      <button class="close-modal" onclick="closeModal('paymentModal')">&times;</button>
+    </div>
+
+    <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.25rem;">
+      <div style="font-size: 0.85rem; color: var(--text-muted);">Khoản phí: <strong id="payFeeName" style="color: var(--text-main);"></strong></div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">Kỳ thu: <strong id="payMonth" style="color: var(--text-main);"></strong></div>
+      <div style="font-size: 1.5rem; font-weight: 800; color: var(--danger); margin-top: 0.5rem;" id="payAmount"></div>
+    </div>
+
+    <!-- Simulated VietQR Box -->
+    <div style="background: #fff; border: 2px dashed #93C5FD; border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem;">
+      <div style="font-weight: 700; color: #1E40AF; margin-bottom: 0.5rem; font-size: 0.95rem;">
+        CỔNG THANH TOÁN VNPAY - VIETQR PRO
+      </div>
+      
+      <!-- Fake QR Code Image using Canvas/SVG -->
+      <div style="width: 160px; height: 160px; margin: 0 auto; background: #000; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; fill: #fff;">
+          <rect width="30" height="30" fill="#fff" />
+          <rect x="5" y="5" width="20" height="20" fill="#000" />
+          <rect x="10" y="10" width="10" height="10" fill="#fff" />
+          <rect x="70" width="30" height="30" fill="#fff" />
+          <rect x="75" y="5" width="20" height="20" fill="#000" />
+          <rect x="80" y="10" width="10" height="10" fill="#fff" />
+          <rect y="70" width="30" height="30" fill="#fff" />
+          <rect x="5" y="75" width="20" height="20" fill="#000" />
+          <rect x="10" y="80" width="10" height="10" fill="#fff" />
+          <rect x="40" y="10" width="20" height="15" fill="#fff" />
+          <rect x="35" y="40" width="30" height="30" fill="#fff" />
+          <rect x="75" y="45" width="15" height="40" fill="#fff" />
+        </svg>
+      </div>
+
+      <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #475569; text-align: left;">
+        <div>Ngân hàng: <strong>BIDV - CN Hà Nội</strong></div>
+        <div>Số tài khoản: <strong>1234 5678 9999</strong></div>
+        <div>Chủ tài khoản: <strong>BAN QUẢN LÝ CHUNG CƯ SMARTBUILDING</strong></div>
+        <div>Nội dung CK: <strong id="payTransferNote" style="color: var(--primary);"></strong></div>
+      </div>
+    </div>
+
+    <form id="payForm" method="POST">
+      <button type="submit" class="btn btn-success" style="width: 100%; font-size: 1rem; padding: 0.75rem;">
+        ✅ Xác Nhận Đã Thanh Toán Thành Công
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openPaymentModal(id, feeName, month, amount) {
+    document.getElementById('payFeeName').textContent = feeName;
+    document.getElementById('payMonth').textContent = month;
+    document.getElementById('payAmount').textContent = amount + ' đ';
+    document.getElementById('payTransferNote').textContent = 'PHICHUNGCU <%= user.apartment_number || "A" %> ' + month.replace('-', '');
+    document.getElementById('payForm').action = '/fees/pay/' + id;
+    document.getElementById('paymentModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

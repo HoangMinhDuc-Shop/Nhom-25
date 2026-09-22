@@ -1,0 +1,125 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">💰 Bảng Điều Khiển Kế Toán & Thu Phí</h1>
+      <p class="page-subtitle">Theo dõi doanh thu, tỷ lệ thu hồi công nợ và tình hình tài chính tòa nhà</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="/fees" class="btn btn-primary">💵 Sổ Thu Phí Chi Tiết</a>
+      <a href="/fees/types" class="btn btn-outline">📑 Biểu Phí & Đơn Giá</a>
+    </div>
+  </div>
+
+  <!-- STATS CARDS -->
+  <div class="grid-4">
+    <div class="card stat-card">
+      <div class="stat-icon blue">💳</div>
+      <div class="stat-info">
+        <h3><%= Number(finance.total_receivable || 0).toLocaleString('vi-VN') %> đ</h3>
+        <p>Tổng các khoản phí phát sinh</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info">
+        <h3><%= Number(finance.total_collected || 0).toLocaleString('vi-VN') %> đ</h3>
+        <p>Đã thu vào quỹ (<%= finance.total_receivable > 0 ? Math.round((finance.total_collected / finance.total_receivable) * 100) : 0 %>%)</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon yellow">⏳</div>
+      <div class="stat-info">
+        <h3><%= Number(finance.total_unpaid || 0).toLocaleString('vi-VN') %> đ</h3>
+        <p>Chưa thanh toán trong hạn</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon red">⚠️</div>
+      <div class="stat-info">
+        <h3><%= Number(finance.total_overdue || 0).toLocaleString('vi-VN') %> đ</h3>
+        <p>Nợ đọng quá hạn cần đôn đốc</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- CƠ CẤU DOANH THU THEO LOẠI PHÍ -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📊 Doanh thu theo Loại Dịch vụ</h3>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Khoản Mục Phí</th>
+              <th>Phải Thu</th>
+              <th>Đã Thu</th>
+              <th>Tỷ Lệ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% feesByType.forEach(item => { %>
+              <tr>
+                <td><strong><%= item.name %></strong></td>
+                <td><%= Number(item.total_amount).toLocaleString('vi-VN') %> đ</td>
+                <td style="color: var(--success);"><%= Number(item.paid_amount).toLocaleString('vi-VN') %> đ</td>
+                <td>
+                  <span class="badge <%= item.total_amount > 0 && (item.paid_amount/item.total_amount) > 0.7 ? 'badge-success' : 'badge-warning' %>">
+                    <%= item.total_amount > 0 ? Math.round((item.paid_amount / item.total_amount) * 100) : 0 %>%
+                  </span>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HÓA ĐƠN CHƯA THU CẦN ĐÔN ĐỐC -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">🚨 Hóa đơn Chưa Thu / Quá Hạn</h3>
+        <a href="/fees?status=unpaid" class="btn btn-sm btn-outline">Xem tất cả</a>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Căn Hộ</th>
+              <th>Loại Phí</th>
+              <th>Số Tiền</th>
+              <th>Kỳ Thu</th>
+              <th>Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (unpaidBills.length === 0) { %>
+              <tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-muted);">Tất cả hóa đơn đã được thanh toán!</td></tr>
+            <% } else { %>
+              <% unpaidBills.forEach(b => { %>
+                <tr>
+                  <td><strong style="color: var(--primary);"><%= b.apartment_number %></strong></td>
+                  <td><%= b.fee_name %></td>
+                  <td><strong style="color: var(--danger);"><%= Number(b.amount).toLocaleString('vi-VN') %> đ</strong></td>
+                  <td><%= b.billing_month %></td>
+                  <td>
+                    <form action="/fees/settle/<%= b.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Xác nhận đã nhận tiền và gạch nợ cho căn <%= b.apartment_number %>?')">
+                      <input type="hidden" name="payment_method" value="transfer">
+                      <button type="submit" class="btn btn-sm btn-success">Gạch nợ ✔️</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/footer') %>

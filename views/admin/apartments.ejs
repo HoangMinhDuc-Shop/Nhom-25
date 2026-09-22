@@ -1,0 +1,250 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🏠 Danh Sách & Quản Lý Căn Hộ</h1>
+      <p class="page-subtitle">Quản lý sơ đồ mặt bằng, trạng thái sử dụng và diện tích căn hộ</p>
+    </div>
+    <% if (user.role === 'admin') { %>
+      <button class="btn btn-primary" onclick="openAddAptModal()">+ Thêm Căn Hộ Mới</button>
+    <% } %>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- STATS -->
+  <div class="grid-4">
+    <div class="card stat-card">
+      <div class="stat-icon blue">🏢</div>
+      <div class="stat-info">
+        <h3><%= stats.totalApartments %></h3>
+        <p>Tổng số căn hộ</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info">
+        <h3><%= stats.occupiedCount %></h3>
+        <p>Đang có cư dân ở</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon yellow">🚪</div>
+      <div class="stat-info">
+        <h3><%= stats.vacantCount %></h3>
+        <p>Căn hộ còn trống</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon red">🛠️</div>
+      <div class="stat-info">
+        <h3><%= stats.maintenanceCount %></h3>
+        <p>Đang bảo trì / Sửa chữa</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER FORM -->
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <form action="/apartments" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+      <div style="flex: 1; min-width: 160px;">
+        <label>Tìm số căn</label>
+        <input type="text" name="keyword" value="<%= filters.keyword || '' %>" placeholder="VD: A1204, B0802...">
+      </div>
+
+      <div style="width: 160px;">
+        <label>Tòa nhà</label>
+        <select name="building_id">
+          <option value="">-- Tất cả tòa --</option>
+          <% buildings.forEach(b => { %>
+            <option value="<%= b.id %>" <%= filters.building_id == b.id ? 'selected' : '' %>><%= b.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div style="width: 160px;">
+        <label>Trạng thái</label>
+        <select name="status">
+          <option value="">-- Tất cả --</option>
+          <option value="occupied" <%= filters.status === 'occupied' ? 'selected' : '' %>>Đang ở (Occupied)</option>
+          <option value="vacant" <%= filters.status === 'vacant' ? 'selected' : '' %>>Trống (Vacant)</option>
+          <option value="maintenance" <%= filters.status === 'maintenance' ? 'selected' : '' %>>Bảo trì (Maintenance)</option>
+        </select>
+      </div>
+
+      <div style="width: 120px;">
+        <label>Tầng</label>
+        <input type="number" name="floor" value="<%= filters.floor || '' %>" placeholder="Tầng">
+      </div>
+
+      <button type="submit" class="btn btn-primary">Lọc Dữ Liệu</button>
+      <a href="/apartments" class="btn btn-outline">Bỏ Lọc</a>
+    </form>
+  </div>
+
+  <!-- APARTMENTS TABLE -->
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã Căn Hộ</th>
+          <th>Tòa Nhà</th>
+          <th>Tầng</th>
+          <th>Diện Tích</th>
+          <th>Số PN</th>
+          <th>Chủ Hộ / Người Đại Diện</th>
+          <th>SĐT Liên Hệ</th>
+          <th>Số Người Ở</th>
+          <th>Trạng Thái</th>
+          <% if (user.role === 'admin') { %><th>Thao Tác</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (apartments.length === 0) { %>
+          <tr>
+            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">Không tìm thấy căn hộ phù hợp với bộ lọc.</td>
+          </tr>
+        <% } else { %>
+          <% apartments.forEach(apt => { %>
+            <tr>
+              <td><strong style="color: var(--primary); font-size: 1rem;"><%= apt.apartment_number %></strong></td>
+              <td><%= apt.building_name %></td>
+              <td>Tầng <%= apt.floor %></td>
+              <td><%= apt.area %> m²</td>
+              <td><%= apt.bedroom_count %> PN</td>
+              <td>
+                <% if (apt.owner_name) { %>
+                  <strong><%= apt.owner_name %></strong>
+                <% } else { %>
+                  <span style="color: var(--text-muted); font-style: italic;">Chưa có chủ hộ</span>
+                <% } %>
+              </td>
+              <td><%= apt.owner_phone || '-' %></td>
+              <td><span class="badge badge-info"><%= apt.resident_count %> cư dân</span></td>
+              <td>
+                <% if (apt.status === 'occupied') { %>
+                  <span class="badge badge-success">Đang ở</span>
+                <% } else if (apt.status === 'vacant') { %>
+                  <span class="badge badge-secondary">Trống</span>
+                <% } else { %>
+                  <span class="badge badge-warning">Bảo trì</span>
+                <% } %>
+              </td>
+              <% if (user.role === 'admin') { %>
+                <td>
+                  <button class="btn btn-sm btn-outline" onclick="openEditAptModal('<%= apt.id %>', '<%= apt.apartment_number %>', '<%= apt.area %>', '<%= apt.bedroom_count %>', '<%= apt.status %>')">
+                    Sửa ✏️
+                  </button>
+                </td>
+              <% } %>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL THÊM CĂN HỘ -->
+<div id="addAptModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">+ Thêm Mới Căn Hộ</h3>
+      <button class="close-modal" onclick="closeModal('addAptModal')">&times;</button>
+    </div>
+    <form action="/apartments/add" method="POST">
+      <div class="form-group">
+        <label>Tòa nhà</label>
+        <select name="building_id" required>
+          <% buildings.forEach(b => { %>
+            <option value="<%= b.id %>"><%= b.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Số hiệu căn hộ (VD: A1501, B2004)</label>
+        <input type="text" name="apartment_number" required placeholder="A1501">
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Tầng</label>
+          <input type="number" name="floor" required min="1" max="50" value="10">
+        </div>
+        <div class="form-group">
+          <label>Diện tích (m²)</label>
+          <input type="number" step="0.1" name="area" required value="75.5">
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Số phòng ngủ</label>
+          <input type="number" name="bedroom_count" required value="2">
+        </div>
+        <div class="form-group">
+          <label>Trạng thái ban đầu</label>
+          <select name="status">
+            <option value="vacant">Trống (Vacant)</option>
+            <option value="occupied">Đang ở (Occupied)</option>
+            <option value="maintenance">Bảo trì (Maintenance)</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Lưu Căn Hộ</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL SỬA CĂN HỘ -->
+<div id="editAptModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">Cập Nhật Thông Tin Căn Hộ <span id="editAptNum"></span></h3>
+      <button class="close-modal" onclick="closeModal('editAptModal')">&times;</button>
+    </div>
+    <form id="editAptForm" method="POST">
+      <div class="form-group">
+        <label>Diện tích (m²)</label>
+        <input type="number" step="0.1" id="editArea" name="area" required>
+      </div>
+      <div class="form-group">
+        <label>Số phòng ngủ</label>
+        <input type="number" id="editBedrooms" name="bedroom_count" required>
+      </div>
+      <div class="form-group">
+        <label>Trạng thái căn hộ</label>
+        <select id="editStatus" name="status">
+          <option value="vacant">Trống (Vacant)</option>
+          <option value="occupied">Đang ở (Occupied)</option>
+          <option value="maintenance">Bảo trì (Maintenance)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Cập Nhật Thông Tin</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openAddAptModal() {
+    document.getElementById('addAptModal').classList.add('active');
+  }
+  function openEditAptModal(id, number, area, bedrooms, status) {
+    document.getElementById('editAptNum').textContent = number;
+    document.getElementById('editArea').value = area;
+    document.getElementById('editBedrooms').value = bedrooms;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editAptForm').action = '/apartments/' + id + '/update';
+    document.getElementById('editAptModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

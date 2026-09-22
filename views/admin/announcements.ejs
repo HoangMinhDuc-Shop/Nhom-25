@@ -1,0 +1,126 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📢 Bảng Tin & Thông Báo Ban Quản Lý</h1>
+      <p class="page-subtitle">Kênh truyền thông chính thức, phát thông báo tức thời (Real-time) tới toàn thể cư dân</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <% if (user.role === 'admin') { %>
+        <a href="/ai/tools" class="btn btn-accent">✨ AI Soạn Thông Báo</a>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ Đăng Thông Báo</button>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- ANNOUNCEMENTS LIST -->
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    <% if (announcements.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        Chưa có thông báo nào được đăng.
+      </div>
+    <% } else { %>
+      <% announcements.forEach(a => { %>
+        <div class="card" style="<%= a.is_read == 0 && user.role === 'resident' ? 'border: 2px solid var(--accent); background: #FFFDF5;' : '' %>">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="badge <%= a.category === 'maintenance' ? 'badge-warning' : (a.category === 'financial' ? 'badge-danger' : (a.category === 'event' ? 'badge-info' : 'badge-primary')) %>">
+                  <%= a.category === 'maintenance' ? 'Bảo trì' : (a.category === 'financial' ? 'Tài chính' : (a.category === 'event' ? 'Sự kiện' : 'Thông báo chung')) %>
+                </span>
+                <span class="badge badge-secondary">
+                  <%= a.target_scope === 'all' ? 'Toàn chung cư' : (a.target_scope === 'building_a' ? 'Tòa A' : 'Tòa B') %>
+                </span>
+                <% if (a.is_read == 0 && user.role === 'resident') { %>
+                  <span class="badge badge-danger">Mới chưa đọc</span>
+                <% } %>
+              </div>
+              <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem;">
+                <%= a.title %>
+              </h2>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-align: right;">
+              <div>📅 <%= new Date(a.created_at).toLocaleDateString('vi-VN') %> lúc <%= new Date(a.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) %></div>
+              <div style="margin-top: 0.2rem;">Người gửi: <strong><%= a.author_name %></strong></div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.95rem; color: #1E293B; line-height: 1.7; white-space: pre-line; background: #F8FAFC; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <%= a.content %>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 0.75rem;">
+            <% if (user.role === 'resident' && a.is_read == 0) { %>
+              <form action="/announcements/<%= a.id %>/read" method="POST">
+                <button type="submit" class="btn btn-sm btn-outline">Đã đọc thông báo này ✔️</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<!-- MODAL TẠO THÔNG BÁO -->
+<div id="createModal" class="modal">
+  <div class="modal-content" style="max-width: 650px;">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">📢 Soạn & Phát Thông Báo Mới</h3>
+      <button class="close-modal" onclick="closeModal('createModal')">&times;</button>
+    </div>
+    <form action="/announcements/create" method="POST">
+      <div class="form-group">
+        <label>Tiêu đề thông báo</label>
+        <input type="text" name="title" required placeholder="[THÔNG BÁO] V/v Bảo dưỡng hệ thống phòng cháy chữa cháy...">
+      </div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Phạm vi phát</label>
+          <select name="target_scope">
+            <option value="all">Toàn bộ chung cư (Tòa A & B)</option>
+            <option value="building_a">Chỉ cư dân Tòa A</option>
+            <option value="building_b">Chỉ cư dân Tòa B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Danh mục</label>
+          <select name="category">
+            <option value="general">Thông báo chung</option>
+            <option value="maintenance">Bảo trì / Kỹ thuật</option>
+            <option value="financial">Tài chính / Phí dịch vụ</option>
+            <option value="event">Sự kiện / Lễ tết</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nội dung thông báo (Chi tiết)</label>
+        <textarea name="content" rows="7" required placeholder="Kính gửi Quý Cư dân, Ban Quản Lý xin thông báo..."></textarea>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+        * Khi bấm "Phát Thông Báo", hệ thống sẽ tự động phát sóng Real-time qua Socket.io tới tất cả cư dân đang mở ứng dụng.
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Phát Thông Báo Ngay 🚀</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openCreateModal() {
+    document.getElementById('createModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

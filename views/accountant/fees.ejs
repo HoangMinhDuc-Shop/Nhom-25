@@ -1,0 +1,196 @@
+<%- include('../layouts/header') %>
+<%- include('../layouts/navbar') %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">💵 Quản Lý Tài Chính & Sổ Thu Phí Chung Cư</h1>
+      <p class="page-subtitle">Theo dõi các giao dịch thu phí dịch vụ, quản lý nợ và gạch nợ thanh toán</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="/fees/types" class="btn btn-outline">📑 Biểu Phí & Đơn Giá</a>
+      <button class="btn btn-primary" onclick="openGenerateModal()">⚡ Phát Sinh Kỳ Phí Hàng Tháng</button>
+    </div>
+  </div>
+
+  <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <!-- STATS -->
+  <div class="grid-3">
+    <div class="card stat-card">
+      <div class="stat-icon blue">📋</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.totalAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p>Tổng tiền phải thu (<%= stats.count %> hóa đơn)</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.paidAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p>Đã thực thu thành công</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon red">⏳</div>
+      <div class="stat-info">
+        <h3><%= Number(stats.unpaidAmount).toLocaleString('vi-VN') %> đ</h3>
+        <p>Còn phải thu (Chưa thanh toán / Quá hạn)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <form action="/fees" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+      <div style="flex: 1; min-width: 180px;">
+        <label>Tìm số căn / Chủ hộ</label>
+        <input type="text" name="keyword" value="<%= filters.keyword || '' %>" placeholder="VD: A1204, Hoàng Minh Đức...">
+      </div>
+
+      <div style="width: 160px;">
+        <label>Kỳ thu phí</label>
+        <input type="month" name="billing_month" value="<%= filters.billing_month || '' %>">
+      </div>
+
+      <div style="width: 160px;">
+        <label>Trạng thái</label>
+        <select name="status">
+          <option value="">-- Tất cả --</option>
+          <option value="unpaid" <%= filters.status === 'unpaid' ? 'selected' : '' %>>Chưa thanh toán</option>
+          <option value="paid" <%= filters.status === 'paid' ? 'selected' : '' %>>Đã thanh toán</option>
+          <option value="overdue" <%= filters.status === 'overdue' ? 'selected' : '' %>>Quá hạn</option>
+        </select>
+      </div>
+
+      <div style="width: 180px;">
+        <label>Loại phí</label>
+        <select name="fee_type_id">
+          <option value="">-- Tất cả các phí --</option>
+          <% feeTypes.forEach(ft => { %>
+            <option value="<%= ft.id %>" <%= filters.fee_type_id == ft.id ? 'selected' : '' %>><%= ft.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Lọc Dữ Liệu</button>
+      <a href="/fees" class="btn btn-outline">Bỏ Lọc</a>
+    </form>
+  </div>
+
+  <!-- TRANSACTIONS TABLE -->
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã HĐ</th>
+          <th>Căn Hộ</th>
+          <th>Tòa</th>
+          <th>Khoản Mục Phí</th>
+          <th>Kỳ Phí</th>
+          <th>Số Tiền</th>
+          <th>Chủ Hộ / SĐT</th>
+          <th>Trạng Thái</th>
+          <th>Ngày Nộp</th>
+          <th>Phương Thức</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (transactions.length === 0) { %>
+          <tr>
+            <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 2rem;">Không tìm thấy hóa đơn nào phù hợp.</td>
+          </tr>
+        <% } else { %>
+          <% transactions.forEach(t => { %>
+            <tr>
+              <td>#<%= t.id %></td>
+              <td><strong style="color: var(--primary);"><%= t.apartment_number %></strong></td>
+              <td><%= t.building_name %></td>
+              <td><%= t.fee_name %></td>
+              <td><strong><%= t.billing_month %></strong></td>
+              <td><strong style="color: <%= t.status === 'paid' ? 'var(--success)' : 'var(--danger)' %>;"><%= Number(t.amount).toLocaleString('vi-VN') %> đ</strong></td>
+              <td>
+                <div><%= t.resident_name || '-' %></div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);"><%= t.resident_phone || '' %></div>
+              </td>
+              <td>
+                <% if (t.status === 'paid') { %>
+                  <span class="badge badge-success">Đã nộp</span>
+                <% } else if (t.status === 'overdue') { %>
+                  <span class="badge badge-danger">Quá hạn</span>
+                <% } else { %>
+                  <span class="badge badge-warning">Chờ nộp</span>
+                <% } %>
+              </td>
+              <td><%= t.paid_at ? new Date(t.paid_at).toLocaleDateString('vi-VN') : '-' %></td>
+              <td>
+                <% if (t.payment_method === 'vnpay') { %>
+                  <span class="badge badge-info">VNPay QR</span>
+                <% } else if (t.payment_method === 'transfer') { %>
+                  <span class="badge badge-secondary">Chuyển khoản</span>
+                <% } else if (t.payment_method === 'cash') { %>
+                  <span class="badge badge-secondary">Tiền mặt</span>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <% if (t.status !== 'paid') { %>
+                  <form action="/fees/settle/<%= t.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Xác nhận gạch nợ cho căn <%= t.apartment_number %> số tiền <%= Number(t.amount).toLocaleString('vi-VN') %> đ?')">
+                    <input type="hidden" name="payment_method" value="transfer">
+                    <button type="submit" class="btn btn-sm btn-success" title="Xác nhận đã nhận tiền">
+                      Gạch nợ ✔️
+                    </button>
+                  </form>
+                <% } else { %>
+                  <span style="color: var(--success); font-size: 0.8rem;">Đã tất toán</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL PHÁT SINH KỲ PHÍ THÁNG -->
+<div id="generateModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color: var(--primary);">⚡ Tự Động Phát Sinh Hóa Đơn Kỳ Phí</h3>
+      <button class="close-modal" onclick="closeModal('generateModal')">&times;</button>
+    </div>
+    <form action="/fees/generate-monthly" method="POST">
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Hệ thống sẽ quét toàn bộ các căn hộ đang có cư dân sinh sống (Occupied), nhân diện tích (m²) với đơn giá phí dịch vụ (12.000 đ/m²) để tạo hóa đơn cho kỳ được chọn.
+      </p>
+
+      <div class="form-group">
+        <label>Chọn Tháng Kỳ Thu Phí (YYYY-MM)</label>
+        <input type="month" name="billing_month" required value="<%= new Date().toISOString().substring(0, 7) %>">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        Bắt đầu sinh hóa đơn hàng loạt
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openGenerateModal() {
+    document.getElementById('generateModal').classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+</script>
+
+<%- include('../layouts/footer') %>

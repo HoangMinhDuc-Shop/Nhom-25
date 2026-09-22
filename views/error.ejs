@@ -1,0 +1,15 @@
+<%- include('layouts/header') %>
+<%- include('layouts/navbar') %>
+
+<div class="container" style="text-align: center; padding: 4rem 1rem;">
+  <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+  <h1 style="color: var(--danger); margin-bottom: 1rem;"><%= typeof title !== 'undefined' ? title : 'Đã xảy ra sự cố' %></h1>
+  <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 2rem;">
+    <%= typeof message !== 'undefined' ? message : 'Không thể thực hiện yêu cầu này của bạn.' %>
+  </p>
+  <div>
+    <a href="/" class="btn btn-primary">Trở về Trang chủ</a>
+  </div>
+</div>
+
+<%- include('layouts/footer') %>
